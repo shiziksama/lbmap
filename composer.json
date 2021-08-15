@@ -1,0 +1,13 @@
+{
+    "name": "shiziksama/lbmap",
+    "authors": [
+        {
+            "name": "Andrei Karepin",
+            "email": "karepinandrei@gmail.com"
+        }
+    ],
+    "require": {},
+	"autoload": {
+		"classmap": ["classes"]
+	}
+}
