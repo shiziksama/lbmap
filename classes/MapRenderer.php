@@ -1,28 +1,5 @@
 <?php
 class MapRenderer{
-    protected $zoom; //telegram message id
-	protected $x; //telegram message id
-	protected $y; //telegram message id
-    public $tries = 500;
-	public $timeout = 3600;
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
-    public function __construct($zoom,$x,$y)
-    {
-        $this->zoom=$zoom;
-        $this->x=$x;
-        $this->y=$y;
-        //
-    }
-
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
 	public static function download_osm($zoom,$x,$y){
 		$file_path=base_path('osm/'.$zoom.'/'.$x.'/'.$y.'.png');
 		$options = array(
@@ -61,7 +38,7 @@ class MapRenderer{
 			['x'=>2*$x+1,'y'=>2*$y+1],
 		];
 		foreach($params as $k=>$param){
-			$overlays[$k]=$this->getOverlay($zoom+1,$param['x'],$param['y']);
+			$overlays[$k]=self::getOverlay($zoom+1,$param['x'],$param['y']);
 		}
 		foreach($overlays as $overlay){
 			$overlay->resizeImage(256,256,\imagick::FILTER_POINT,1);

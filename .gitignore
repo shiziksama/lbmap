@@ -4,3 +4,5 @@
 /lb_overlay/
 /o5m/
 /osm/
+/osmconvert_tempfile*
+/queue/
