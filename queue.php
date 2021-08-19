@@ -1,4 +1,7 @@
 <?php
+ini_set('memory_limit','5G');
+//var_dump(ini_get('memory_limit'));
+//die();
 include(__DIR__.'/vendor/autoload.php');
 
 function base_path($str){
