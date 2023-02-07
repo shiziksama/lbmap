@@ -2,12 +2,10 @@
 class OverlayRenderer{
 	
 	public static function lines_filter($pre_lines){
-		//var_dump($elements);		die();
-		$lines=['undefined'=>[],'bikelane'=>[],'foot'=>[],'bicycle_undefined'=>[],'great_foot'=>[],'great'=>[]];
+		$lines=['undefined'=>[],'bikelane'=>[],'foot'=>[],'bicycle_undefined'=>[],'greatfoot'=>[],'great'=>[]];
 		$points=[];
-		//$lines=[];
 		foreach($pre_lines as $pre_line){
-			$tg=!empty($pre_line['tags']['lbroad'])?$pre_line['tags']['lbroad']:'undefined';
+			$tg=!empty($pre_line['tags']['lbroads'])?$pre_line['tags']['lbroads']:'undefined';
 			$lines[$tg][]=$pre_line['points'];
 		}
 		return $lines;
@@ -33,15 +31,8 @@ class OverlayRenderer{
 		$lat_from=rad2deg(atan(sinh(pi() * (1 - 2 * ($y+1) / $items_count))));
 
 		$lbroads=new LBRoads();
-		//if(php_sapi_name()=='cli'){var_dump('beforelines|time:'.time());}
 		$lines=$lbroads->get_lines($zoom,$x,$y);
-		//var_dump($lines);
-		//if(php_sapi_name()=='cli'){var_dump('afterlines|time:'.time());}
-
-		$lines=array_map([$lbroads,'add_lbroads_tags'],$lines);
-		//if(php_sapi_name()=='cli'){var_dump('addedtags|time:'.time());}
 		$lines_all=self::lines_filter($lines);
-		//if(php_sapi_name()=='cli'){var_dump('filter_lines|time:'.time());}
 		$map = new Imagick();
 		$map->newImage(512, 512,new \ImagickPixel('transparent'));
 		$map->setImageFormat("png");
@@ -64,7 +55,7 @@ class OverlayRenderer{
 				}
 			}
 			
-			$colors=['great'=>'125,0,125','bicycle_undefined'=>'255,0,0','bikelane'=>'0,0,255','undefined'=>'0,0,0','foot'=>'40,252,3','great_foot'=>'19,130,0'];
+			$colors=['great'=>'125,0,125','bicycle_undefined'=>'255,0,0','bikelane'=>'0,0,255','undefined'=>'0,0,0','foot'=>'40,252,3','greatfoot'=>'19,130,0'];
 			$color=$colors[$type];
 			$draw = new \ImagickDraw();
 			//$draw->setFillAlpha(0);

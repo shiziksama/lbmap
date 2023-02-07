@@ -11,14 +11,7 @@ while($z->read()) {
 		$z->endElement();
 		continue;
 		//break;
-	}elseif($z->name=='way'&&$z->nodeType==\XmlReader::ELEMENT){
-//		var_dump($z->expand());
-//		die();
-//		$doc = new \DOMDocument;
-//		$node = simplexml_import_dom($doc->importNode($z->expand(), true));
-		//foreach($node->)
-//		var_dump($node->asXML());
-		
+	}elseif($z->name=='way'&&$z->nodeType==\XmlReader::ELEMENT){		
 		$node=simplexml_load_string($z->readOuterXml());
 		$nodes=[];
 		$tags=[];
@@ -33,35 +26,25 @@ while($z->read()) {
 			$z->endElement();
 			continue;
 		};//Только дороги
-		//var_dump($tags);
-		$el=$lbroads->modify_tags(['tags'=>$tags]);
-		$elements=$lbroads->filter_overpass([$el]);
-		
-		if(empty($elements)){
+		$tags=OsmFilter::modify_tags($tags);
+		$result=OsmFilter::test_element(['tags'=>$tags]);
+		if($result=='no'){
+			//$tags=['lbroads'=>'no','highway'=>'lbroad'];
 			$z->endElement();
 			continue;
+		}elseif(in_array($result,['great','bicycle_undefined','bikelane','greatfoot','foot'])){
+			$tags=['lbroads'=>$result,'highway'=>'lbroad'];
 		}
-		$tags=$elements[0]['tags'];
 		
-		if(empty($tags)){
-			$z->endElement();
-			continue;
-		}
-		//var_dump($z->readOuterXml());
 		echo '<way id="'.$node->attributes()->id.'">'.PHP_EOL;
 		foreach($nodes as $nd){
-			echo '	<nd ref="'.$nd.'"/>'.PHP_EOL;
+			echo '<nd ref="'.$nd.'"/>'.PHP_EOL;
 		}
 		foreach($tags as $k=>$v){
          echo '	<tag k="'.$k.'" v="'.$v.'"/>'.PHP_EOL;
 		}
         echo '</way>'.PHP_EOL;
-		//die();
-		//var_dump($tags);
-		//var_dump(''.$node->attributes()->id);
 		$z->endElement();
-		//var_dump('way');
-		//break;
 	}else{
 		if($z->nodeType==\XmlReader::ELEMENT){
 			$attributes='';
