@@ -19,7 +19,50 @@ class OverlayRenderer{
 		}
 		return $length;
 	}
-    public static  function handle($zoom,$x,$y){
+	public static function get_image($zoom,$x,$y){
+		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
+		$overlay=file_get_contents($file_path);
+		$overlayI=new \Imagick();
+		$overlayI->readImageBlob($overlay);
+		return $overlayI;
+	}
+	public static function handleConcat($zoom,$x,$y){
+		$params=[
+			['x'=>2*$x,'y'=>2*$y],
+			['x'=>2*$x,'y'=>2*$y+1],
+			['x'=>2*$x+1,'y'=>2*$y],
+			['x'=>2*$x+1,'y'=>2*$y+1],
+		];
+		foreach($params as $k=>$param){
+			self::handle($zoom+1,$param['x'],$param['y']);
+			$overlays[$k]=self::get_image($zoom+1,$param['x'],$param['y']);
+		}
+		foreach($overlays as $overlay){
+			$overlay->resizeImage(256,256,\imagick::FILTER_POINT,1);
+		}
+
+		$overlayI=new \Imagick();
+		$overlayI->newImage(512, 512,new \ImagickPixel('transparent'));
+		$overlayI->setImageFormat("png");
+		$overlayI->compositeImage($overlays[0],\imagick::COMPOSITE_OVER,0,0);
+		$overlayI->compositeImage($overlays[1],\imagick::COMPOSITE_OVER,0,256);
+		$overlayI->compositeImage($overlays[2],\imagick::COMPOSITE_OVER,256,0);
+		$overlayI->compositeImage($overlays[3],\imagick::COMPOSITE_OVER,256,256);
+		
+		
+		$imagefile=$overlayI->getImageBlob();
+		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
+		$dirname=pathinfo($file_path,PATHINFO_DIRNAME);
+		if(!is_dir($dirname)){
+			mkdir($dirname,0755,true);
+		}
+		file_put_contents($file_path,$imagefile);
+	}
+    public static function handle($zoom,$x,$y){
+		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
+		if(file_exists($file_path))return;
+		if(php_sapi_name()=='cli'){var_dump('handle|'.$zoom.'|'.$x.'|'.$y.'|time:'.time());}
+		if($zoom<6) return self::handleConcat($zoom,$x,$y);
 		//if($zoom<10) return'';
 		$items_count=pow(2,$zoom);
 		$lng_deg_per_item=360/$items_count;

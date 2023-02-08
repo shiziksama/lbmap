@@ -95,8 +95,18 @@ class LBRoads{
 		
 		$bbox=explode(',',$bbox);
 		$bbox=$bbox[1].','.$bbox[0].','.$bbox[3].','.$bbox[2];
+		$elements=$this->get_elements($filename,$bbox);
+		
+		return ['elements'=>$elements, 
+				"version"=> 0.6,
+				"generator"=>"Overpass API 0.7.56.8 7d656e78",
+				"osm3s"=>[
+					"timestamp_osm_base"=>"2021-02-05T12:58:03Z",
+					"copyright"=>"The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+				  ]];
+	}
+	public function get_elements($filename,$bbox){
 		$shell='osmconvert '.base_path('o5m/'.$filename).' --complete-ways --drop-author -b='.$bbox;
-		//var_dump($shell);
 		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
 		$s=shell_exec($shell);
 		if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
@@ -136,13 +146,7 @@ class LBRoads{
 			}
 		}
 		if(php_sapi_name()=='cli'){var_dump('after_xml|time:'.time());}
-		return ['elements'=>$elements, 
-				"version"=> 0.6,
-				"generator"=>"Overpass API 0.7.56.8 7d656e78",
-				"osm3s"=>[
-					"timestamp_osm_base"=>"2021-02-05T12:58:03Z",
-					"copyright"=>"The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
-				  ]];
+		return $elements;
 	}
 	public function computeOutCode($point,$lat_from,$lat_to,$lng_from,$lng_to){
 		$result=0;

@@ -12,7 +12,7 @@ while(true){
 	foreach($files as $file){
 		$basename=pathinfo($file,PATHINFO_BASENAME);
 		list($zoom,$x,$y)=explode('.',$basename);
-		MapRenderer::handle($zoom,$x,$y);
+		OverlayRenderer::handle($zoom,$x,$y);
 		unlink($file);
 	}
 	var_dump('end queue');

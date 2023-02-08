@@ -46,7 +46,7 @@ var mymap = L.map('mapid', {
     center: [clat, clng],
     zoom: cz
 });
-/*
+
 L.tileLayer('https://tile.thunderforest.com/cycle/{z}/{x}/{y}@2x.png?apikey=cdeea879c575479fbf645def237f4afa', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
     maxZoom: 18,
@@ -55,7 +55,7 @@ L.tileLayer('https://tile.thunderforest.com/cycle/{z}/{x}/{y}@2x.png?apikey=cdee
     zoomOffset: -1,
     //accessToken: 'pk.eyJ1Ijoic2hpemlrc2FtYSIsImEiOiJja2I2bWNsbm0wMDJlMnFvYmRwanVma3ZnIn0.-2IBbm2m-ZnEv-EjvH7WAA'
 }).addTo(mymap);
-*/
+
 //L.tileLayer('https://tracks.lamastravels.in.ua/map_overlay/1/{z}/{x}/{y}.png', {
 /*
 L.tileLayer('http://lbmap.lamastravels.in.ua/lb_map/{z}/{x}/{y}.png', {
@@ -65,7 +65,7 @@ L.tileLayer('http://lbmap.lamastravels.in.ua/lb_map/{z}/{x}/{y}.png', {
 }).addTo(mymap);
 	*/
 
-L.tileLayer('http://localhost:8000/lb_map/{z}/{x}/{y}.png', {
+L.tileLayer('http://localhost:8000/lb_overlay/{z}/{x}/{y}.png', {
 	maxZoom: 18,
     tileSize: 256,
     zoomOffset: 0,

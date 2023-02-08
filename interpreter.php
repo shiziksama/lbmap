@@ -42,5 +42,22 @@ function base_path($str){
 }
 include(__DIR__.'/vendor/autoload.php');
 $lbroads=new LBRoads;
-$result=$lbroads->get_overpass($_POST['data']);
+foreach(explode(";",$_POST['data']) as $line){
+	preg_match_all('/\([\d.,-]+\)/',$line,$out);
+	if(empty(array_filter($out)))continue;
+	$bbox=$out[0][0];
+	$bbox=substr($bbox,1,-1);
+}
+$filename='planet-black.o5m';
+$bbox=explode(',',$bbox);
+$bbox=$bbox[1].','.$bbox[0].','.$bbox[3].','.$bbox[2];
+$elements=$lbroads->get_elements($filename,$bbox);
+
+$result=['elements'=>$elements, 
+		"version"=> 0.6,
+		"generator"=>"Overpass API 0.7.56.8 7d656e78",
+		"osm3s"=>[
+			"timestamp_osm_base"=>"2021-02-05T12:58:03Z",
+			"copyright"=>"The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+		  ]];
 echo json_encode($result);

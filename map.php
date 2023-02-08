@@ -3,24 +3,6 @@
 Route::get('/lb_overlay/{z}/{x}/{y}.png',[MapRendererController::class,'longboard_overlay']);
 Route::get('/lb_map/{z}/{x}/{y}.png',[MapRendererController::class,'longboard_map']);
 
-	spublic function get_overpass($data,$bbox){
-		$url = 'http://overpass-api.de/api/interpreter';
-		$data=str_replace('{{bbox}}',$bbox,$data);
-		//var_dump($data);
-		$data=['data'=>$data];
-
-		// use key 'http' even if you send the request to https://...
-		$options = array(
-			'http' => array(
-				'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-				'method'  => 'POST',
-				'content' => http_build_query($data)
-			)
-		);
-		$context  = stream_context_create($options);
-		$result = json_decode(file_get_contents($url, false, $context),true);
-		return $result;
-	}
 	public function elements_to_lines($elements){
 		$lines=[];
 		$points=[];
@@ -66,14 +48,15 @@ function base_path($str){
 	return __DIR__.'/'.$str;
 
 }
-var_dump('some');
-preg_match('~/lb_map/(?<zoom>(\d+))/(?<x>(\d+))/(?<y>(\d+)).png~',$_SERVER['REQUEST_URI'],$matches);
+preg_match('~/lb_overlay/(?<zoom>(\d+))/(?<x>(\d+))/(?<y>(\d+)).png~',$_SERVER['REQUEST_URI'],$matches);
 $zoom=$matches['zoom'];
 $x=$matches['x'];
 $y=$matches['y'];
 
-if(false){
-	MapRenderer::handle($zoom,$x,$y);
+if($zoom>6){
+	OverlayRenderer::handle($zoom,$x,$y);
+	header ('Content-Type: image/png');
+	echo file_get_contents(base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png'));
 }else{
 	file_put_contents(__DIR__.'/queue/'.$zoom.'.'.$x.'.'.$y,'');
 }

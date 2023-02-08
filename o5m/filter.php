@@ -1,7 +1,5 @@
 <?php
 include __DIR__.'/../vendor/autoload.php';
-$lbroads=new LBRoads;
-
 $z = new WeblamasXMLReader();
 $z->open("php://stdin");
 echo "<?xml version='1.0' encoding='UTF-8'?>".PHP_EOL;
@@ -29,7 +27,6 @@ while($z->read()) {
 		$tags=OsmFilter::modify_tags($tags);
 		$result=OsmFilter::test_element(['tags'=>$tags]);
 		if($result=='no'){
-			//$tags=['lbroads'=>'no','highway'=>'lbroad'];
 			$z->endElement();
 			continue;
 		}elseif(in_array($result,['great','bicycle_undefined','bikelane','greatfoot','foot'])){
@@ -58,20 +55,6 @@ while($z->read()) {
 		}elseif($z->nodeType==\XmlReader::END_ELEMENT){
 			echo '</'.$z->name.'>'.PHP_EOL;
 		}
-		/*
-		<osm version="0.6" generator="osmconvert 0.8.10" timestamp="2021-02-01T21:42:02Z">
-        <bounds minlat="44.008624" minlon="22.132644" maxlat="52.386497" maxlon="40.238113"/>
-		*/
 	}
-	//var_dump($z->nodeType);
-	//die();
-	//echo '';//TODO echo readed item
-	//if(@!$z->read())break;//one more very bad solution
 }
-/*
-for($i=0;$i<10;$i++){
-$line = fgets(STDIN);
-var_dump($line);
-}
-*/
 echo '</xml>';
