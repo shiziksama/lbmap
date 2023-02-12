@@ -53,11 +53,20 @@ $zoom=$matches['zoom'];
 $x=$matches['x'];
 $y=$matches['y'];
 
-if($zoom>6){
+if(empty($zoom))return;
+$pzoom=$zoom;$px=$x;$py=$y;
+$parent_file=__DIR__.'/lb_json/l_'.$pzoom.'.'.$px.'.'.$py.'.packed';
+while($pzoom>6&&!file_exists($parent_file)){
+	$pzoom-=1;$px=floor($px/2);$py=floor($py/2);	
+	$parent_file=__DIR__.'/lb_json/l_'.$pzoom.'.'.$px.'.'.$py.'.packed';
+	
+}
+if(filesize(__DIR__.'/lb_json/l_'.$pzoom.'.'.$px.'.'.$py.'.packed')<13718638){
 	OverlayRenderer::handle($zoom,$x,$y);
 	header ('Content-Type: image/png');
 	echo file_get_contents(base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png'));
 }else{
+	//TODO show queued or not
 	file_put_contents(__DIR__.'/queue/'.$zoom.'.'.$x.'.'.$y,'');
 }
 
