@@ -1,4 +1,5 @@
 <?php 
+
 class LBRoads{
 	public function create_o5m($zoom,$x,$y){
 		while($zoom>3){
@@ -42,9 +43,9 @@ class LBRoads{
 	}
 	public function get_elements($filename,$bbox){
 		$shell='osmconvert '.base_path('o5m/'.$filename).' --complete-ways --drop-author -b='.$bbox;
-		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
+//		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
 		$s=shell_exec($shell);
-		if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
+//		if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
 		$z = new WeblamasXMLReader();
 		$z->xml($s);
 		$elements=[];
@@ -80,7 +81,7 @@ class LBRoads{
 				$z->endElement();
 			}
 		}
-		if(php_sapi_name()=='cli'){var_dump('after_xml|time:'.time());}
+//		if(php_sapi_name()=='cli'){var_dump('after_xml|time:'.time());}
 		return $elements;
 	}
 	public function computeOutCode($point,$lat_from,$lat_to,$lng_from,$lng_to){
@@ -101,7 +102,7 @@ class LBRoads{
 	}
 	public function parse_parent_lines($zoom,$x,$y){
 		$parent_lines=$this->get_lines($zoom-1,floor($x/2),floor($y/2));
-		
+	
 		$items_count=pow(2,$zoom);
 		$lng_deg_per_item=360/$items_count;
 		$lng_from=-180+$x*$lng_deg_per_item;
@@ -124,22 +125,86 @@ class LBRoads{
 				}
 			}
 		}
-		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.json');
-		file_put_contents($path,json_encode($lines));
+		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.packed');
+		file_put_contents($path,$this->lines2file($lines));
 		return $lines;
-		var_dump(count($lines));
-		var_dump(count($parent_lines));
+	}
+	public function file2lines($content){
+		$lbroads=['great'=>1,'bicycle_undefined'=>2,'bikelane'=>3,'greatfoot'=>4,'foot'=>5,'undefined'=>6];
+		$lbroads=array_flip($lbroads);
+		$encoded=gzuncompress($content);
+		$pointlines=unpack('i*',$encoded);
+		//var_dump($pointlines);
+		//die();
+		//var_dump(array_slice($pointlines,0,40));
+		$k=1;
+		$lines=[];
+		$line=[];
+		$step='type';
+		while($k<count($pointlines)){
+			if($step=='type'){
+				$line['tags']['lbroads']=$lbroads[$pointlines[$k]];
+				$step='count';
+				$k++;
+			}
+			if($step=='count'){
+				$count=round($pointlines[$k]/2);
+				$step='coords';
+				$k++;;
+			}
+			while($step=='coords'&&$count>0){
+				$line['points'][]=['lat'=>$pointlines[$k]/10000000,'lng'=>$pointlines[$k+1]/10000000];
+				$k+=2;
+				$count--;
+			}
+			if($step=='coords'&&$count==0){
+				$step='type';
+				$lines[]=$line;
+				$line=[];
+			}
+		}
+		return $lines;
+	}
+	public function lines2file($lines){
+		//$lines=array_slice($lines,0,2);
+		$lbroads=['great'=>1,'bicycle_undefined'=>2,'bikelane'=>3,'greatfoot'=>4,'foot'=>5,'undefined'=>6];
+		$packed='';
+		foreach($lines as $line){
+			$pointline=[];
+			$type=$lbroads[$line['tags']['lbroads']??'undefined'];
+			foreach($line['points'] as $point){
+				$pointline[]=$point['lat']*10000000;
+				$pointline[]=$point['lng']*10000000;
+				//$pointline[]=(180.1234567*10000000);
+				
+			}
+			$pointlines[]=$pointline;
+			$packed.=pack('i*',$type,count($pointline),...$pointline);
+		}
+		//$coord=(int)(180.1234567*10000000);
+		//var_dump(PHP_INT_MAX);
+		//var_dump(PHP_INT_MIN);
+		//var_dump($coord);
+		$compressed=gzcompress($packed,9);
+		return $compressed;
+		var_dump('encode_strlen'.strlen(json_encode($lines)));
+		var_dump('packed_strlen'.strlen($packed));
+		var_dump('gzpack_strlen'.strlen($compressed));
+
+		$pointlines=unpack('i*',$packed);
+		
+		///var_dump(json_encode($pointlines));
+		//var_dump(json_encode(array_values($pointlines)));
+		
+		//var_dump(base64_encode($packed));
+		
+		//svar_dump($lines);
 		die();
 	}
 	public function get_lines($zoom,$x,$y){
-		if(php_sapi_name()=='cli'){
-			var_dump('get_lines|zoom:'.$zoom.' '.$x.' '.$y);
-			if(php_sapi_name()=='cli'){var_dump('get_lines|time:'.time());}
-		}
-		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.json');
+		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.packed');
 		if(file_exists($path)){
-			$result=json_decode(file_get_contents($path),true);
-			return $result;
+			return $this->file2lines(file_get_contents($path));
 		}
 		if($zoom>6){
 			return $this->parse_parent_lines($zoom,$x,$y);
@@ -158,19 +223,13 @@ class LBRoads{
 		$lines=[];
 		foreach($pre_lines as $pre_line){
 			foreach($pre_line['nodes'] as $pt){
-				if(empty($points[$pt])){
-					
-					var_dump($pre_line);
-					var_dump($pt);
-					continue;//STRONGLY TODO
-				}
 				$pre_line['points'][]=$points[$pt];
 			}
 			unset($pre_line['nodes']);
 			$lines[]=$pre_line;
 		}
-		if(php_sapi_name()=='cli'){var_dump('filtered_lines|time:'.time());}
-		file_put_contents($path,json_encode($lines));
+//		if(php_sapi_name()=='cli'){var_dump('filtered_lines|time:'.time());}
+		file_put_contents($path,$this->lines2file($lines));
 		return $lines;	
 	}
 }

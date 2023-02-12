@@ -61,7 +61,7 @@ class OverlayRenderer{
     public static function handle($zoom,$x,$y){
 		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
 		if(file_exists($file_path))return;
-		if(php_sapi_name()=='cli'){var_dump('handle|'.$zoom.'|'.$x.'|'.$y.'|time:'.time());}
+		if(php_sapi_name()=='cli'){var_dump('handle|'.str_pad($zoom,$zoom).'|'.$x.'|'.$y.'|time:'.time());}
 		if($zoom<6) return self::handleConcat($zoom,$x,$y);
 		//if($zoom<10) return'';
 		$items_count=pow(2,$zoom);
@@ -90,7 +90,7 @@ class OverlayRenderer{
 					$l['x']=round(($item['lng']-$lng_from)*512/($lng_to-$lng_from));
 					return $l;
 				},$item);
-				
+				//filter lines by removing repeatable points
 				//var_dump($item);
 				if(self::get_length($item)>2){
 				//die();
@@ -113,7 +113,7 @@ class OverlayRenderer{
 
 			$map->drawImage($draw);
 		}
-		if(php_sapi_name()=='cli'){var_dump('drawed_all|time:'.time());}
+		//if(php_sapi_name()=='cli'){var_dump('drawed_all|time:'.time());}
 		$imagefile=$map->getImageBlob();
 		if(array_sum(array_map('count',$lines_all))!=0){
 			$imagefile=$map->getImageBlob();
@@ -121,15 +121,14 @@ class OverlayRenderer{
 			$imagefile='';
 			$imagefile=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAgAAAAIAAQMAAADOtka5AAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAADZJREFUeNrtwQEBAAAAgqD+r26IwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4g6CAAABAfU3XgAAAABJRU5ErkJggg==');
 		}
-		if(php_sapi_name()=='cli'){var_dump('putfile|time:'.time());}
+		//if(php_sapi_name()=='cli'){var_dump('putfile|time:'.time());}
 			
 		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
-		if(php_sapi_name()=='cli'){var_dump('completed|time:'.time());}
 		$dirname=pathinfo($file_path,PATHINFO_DIRNAME);
 		if(!is_dir($dirname)){
 			mkdir($dirname,0755,true);
 		}
 		file_put_contents($file_path,$imagefile);
-		if(php_sapi_name()=='cli'){var_dump('end|time:'.time());}
-    }
+		//if(php_sapi_name()=='cli'){var_dump('completed|time:'.time());}
+		}
 }
