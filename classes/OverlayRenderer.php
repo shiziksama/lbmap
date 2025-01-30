@@ -62,7 +62,7 @@ class OverlayRenderer{
 		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
 		if(file_exists($file_path))return;
 		if(php_sapi_name()=='cli'){var_dump('handle|'.str_pad($zoom,$zoom).'|'.$x.'|'.$y.'|time:'.time());}
-		if($zoom<6) return self::handleConcat($zoom,$x,$y);
+		if($zoom<7) return self::handleConcat($zoom,$x,$y);
 		//if($zoom<10) return'';
 		$items_count=pow(2,$zoom);
 		$lng_deg_per_item=360/$items_count;

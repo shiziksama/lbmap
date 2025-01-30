@@ -206,7 +206,7 @@ class LBRoads{
 		if(file_exists($path)){
 			return $this->file2lines(file_get_contents($path));
 		}
-		if($zoom>6){
+		if($zoom>7){
 			return $this->parse_parent_lines($zoom,$x,$y);
 		}
 		
