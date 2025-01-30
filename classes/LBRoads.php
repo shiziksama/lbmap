@@ -16,7 +16,6 @@ class LBRoads{
 		$lng_from=-180+$x*$lng_deg_per_item;
 		$lng_to=-180+($x+1)*$lng_deg_per_item;
 		
-		$lat_deg_per_item=(85.0511*2)/$items_count;
 		$lat_to=rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
 		$lat_from=rad2deg(atan(sinh(pi() * (1 - 2 * ($y+1) / $items_count))));
 		
@@ -44,8 +43,9 @@ class LBRoads{
 	public function get_elements($filename,$bbox){
 		$shell='osmconvert '.base_path('o5m/'.$filename).' --complete-ways --drop-author -b='.$bbox;
 //		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
+		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time().'|'.$shell);}
 		$s=shell_exec($shell);
-//		if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
+		//if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
 		$z = new WeblamasXMLReader();
 		$z->xml($s);
 		$elements=[];
@@ -187,19 +187,6 @@ class LBRoads{
 		//var_dump($coord);
 		$compressed=gzcompress($packed,9);
 		return $compressed;
-		var_dump('encode_strlen'.strlen(json_encode($lines)));
-		var_dump('packed_strlen'.strlen($packed));
-		var_dump('gzpack_strlen'.strlen($compressed));
-
-		$pointlines=unpack('i*',$packed);
-		
-		///var_dump(json_encode($pointlines));
-		//var_dump(json_encode(array_values($pointlines)));
-		
-		//var_dump(base64_encode($packed));
-		
-		//svar_dump($lines);
-		die();
 	}
 	public function get_lines($zoom,$x,$y){
 		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.packed');
