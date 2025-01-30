@@ -6,7 +6,12 @@
             "email": "karepinandrei@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+      "ext-simplexml": "*",
+      "ext-xmlreader": "*",
+      "ext-zlib": "*",
+      "ext-imagick": "*"
+    },
 	"autoload": {
 		"classmap": ["classes"]
 	}

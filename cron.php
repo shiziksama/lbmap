@@ -1,5 +1,6 @@
 <?php
 
+ini_set('memory_limit','25G');
 include(__DIR__.'/vendor/autoload.php');
 function base_path($str){
 	return __DIR__.'/'.$str;

@@ -1,7 +1,7 @@
 <?php
 
 class OsmFilter{
-	public function modify_tags($tags){
+	public static function modify_tags($tags){
 		if(!empty($tags['cycleway:surface'])){
 			$tags['surface']=$tags['cycleway:surface'];
 			$tags['bicycle']='designated';
@@ -9,7 +9,7 @@ class OsmFilter{
 		}
 		return $tags;
 	}
-	public function is_bicycledesignated($tags){
+	public static function is_bicycledesignated($tags){
 		$types=['track','separate','opposite_track','use_sidepath'];
 		$designated=false;
 		$designated=$designated||(!empty($tags['bicycle'])&&in_array($tags['bicycle'],['designated','use_sidepath']));
@@ -23,21 +23,21 @@ class OsmFilter{
 		$designated=$designated||(!empty($tags['highway'])&&$tags['highway']=='cycleway');
 		return $designated;
 	}
-	public function is_footdesignated($tags){
+	public static function is_footdesignated($tags){
 		$designated=false;
 		$designated=$designated||(!empty($tags['foot'])&&in_array($tags['foot'],['designated','use_sidepath']));
 		$designated=$designated||(!empty($tags['highway'])&&$tags['highway']=='footway');
 		$designated=$designated||(!empty($tags['footway'])&&$tags['footway']=='sidewalk');
 		return $designated;
 	}
-	public function is_surface_great($tags){
+	public static function is_surface_great($tags){
 		$surface=false;
 		$surface=$surface||(!empty($tags['surface'])&&in_array($tags['surface'],['asphalt','paving_stones','concrete']));
 		$surface=$surface||(!empty($tags['smoothness'])&&in_array($tags['smoothness'],['good','excellent']));
 		//$surface=$surface||(!empty($tags['tracktype'])&&in_array($tags['tracktype'],['grade1']));
 		return $surface;
 	}
-	public function no_surface_information($tags){
+	public static function no_surface_information($tags){
 		$all_tags=implode('',array_keys($tags)).implode('',array_values($tags));
 		if(
 			(strpos($all_tags,'surface')===false)&&
@@ -45,19 +45,19 @@ class OsmFilter{
 			)return true;//есть упоминания сурфейса
 		return false;
 	}
-	public function test_great($tags){
+	public static function test_great($tags){
 		$designated=self::is_bicycledesignated($tags);
 		$surface=self::is_surface_great($tags);
 		if($designated&&$surface)return true;
 		return false;
 	}
-	public function test_bicycleundefined($tags){
+	public static function test_bicycleundefined($tags){
 		$designated=self::is_bicycledesignated($tags);
 		$no_surface=self::no_surface_information($tags);
 		if($designated&&$no_surface)return true;//для велосипедов, но нету вообще информации о качестве покрытия
 		return false;
 	}
-	public function test_bikelane($tags){
+	public static function test_bikelane($tags){
 		$lanes=['lane','line','shared_lane','share_busway','opposite_lane'];
 		if(!empty($tags['cycleway'])&&in_array($tags['cycleway'],$lanes))return true;
 		if(!empty($tags['cycleway:left'])&&in_array($tags['cycleway:left'],$lanes))return true;
@@ -65,7 +65,7 @@ class OsmFilter{
 		if(!empty($tags['cycleway:both'])&&in_array($tags['cycleway:both'],$lanes))return true;
 		return false;
 	}
-	public function test_greatother($tags){
+	public static function test_greatother($tags){
 		$all_tags=implode('',array_keys($tags)).implode('',array_values($tags));
 		if(
 			(strpos($all_tags,'cycle')!==false)
@@ -78,7 +78,7 @@ class OsmFilter{
 		
 		return false;
 	}
-	public function test_foot($tags){
+	public static function test_foot($tags){
 		$all_tags=implode('',array_keys($tags)).implode('',array_values($tags));
 		if(
 			(strpos($all_tags,'cycle')!==false)
