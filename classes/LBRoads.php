@@ -78,6 +78,7 @@ class LBRoads{
 					'nodes'=>$nodes,
 					
 				];
+                $osm=null;
 				$z->endElement();
 			}
 		}
@@ -215,10 +216,12 @@ class LBRoads{
 				//Іноді точка відсутня, того що вона не входить в bbox. але присутній шлях
 				if(!empty($points[$pt])){
 					$pre_line['points'][]=$points[$pt];
+				}
 			}
 			unset($pre_line['nodes']);
 			if(!empty($pre_line['points'])){
 				$lines[]=$pre_line;
+			}
 		}
 //		if(php_sapi_name()=='cli'){var_dump('filtered_lines|time:'.time());}
 		file_put_contents($path,$this->lines2file($lines));
