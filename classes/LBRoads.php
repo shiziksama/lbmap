@@ -130,6 +130,7 @@ class LBRoads{
 		return $lines;
 	}
 	public function file2lines($content){
+		return json_decode($content,true);
 		$lbroads=['great'=>1,'bicycle_undefined'=>2,'bikelane'=>3,'greatfoot'=>4,'foot'=>5,'undefined'=>6];
 		$lbroads=array_flip($lbroads);
 		$encoded=gzuncompress($content);
@@ -166,6 +167,7 @@ class LBRoads{
 		return $lines;
 	}
 	public function lines2file($lines){
+		return json_encode($lines);
 		//$lines=array_slice($lines,0,2);
 		$lbroads=['great'=>1,'bicycle_undefined'=>2,'bikelane'=>3,'greatfoot'=>4,'foot'=>5,'undefined'=>6];
 		$packed='';
