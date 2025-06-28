@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Services;
+
 class OsmFilter{
 	public static function modify_tags($tags){
 		if(!empty($tags['cycleway:surface'])){

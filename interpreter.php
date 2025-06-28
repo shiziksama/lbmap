@@ -41,6 +41,8 @@ function base_path($str){
 
 }
 include(__DIR__.'/vendor/autoload.php');
+
+use App\Services\LBRoads;
 $lbroads=new LBRoads;
 foreach(explode(";",$_POST['data']) as $line){
 	preg_match_all('/\([\d.,-]+\)/',$line,$out);

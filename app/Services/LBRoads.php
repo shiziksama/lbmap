@@ -1,4 +1,6 @@
-<?php 
+<?php
+
+namespace App\Services;
 
 class LBRoads{
 	public function create_o5m($zoom,$x,$y){

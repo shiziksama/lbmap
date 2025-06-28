@@ -1,12 +1,4 @@
-<?php
-set_time_limit(0);
-if($_SERVER["REQUEST_URI"]!='/'){
-	if (preg_match('/\.(?:png|jpg|jpeg|gif)$/', $_SERVER["REQUEST_URI"])&&file_exists(__DIR__.$_SERVER["REQUEST_URI"])) {
-		return false;    // сервер возвращает файлы напрямую.
-	}
-	include(__DIR__.'/map.php');
-	exit;
-}?><!DOCTYPE html>
+<!DOCTYPE html>
 <html>
     <head>
     <title>тречки</title>
