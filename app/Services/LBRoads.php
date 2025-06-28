@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Process;
+
 class LBRoads{
 	public function create_o5m($zoom,$x,$y){
 		while($zoom>4){
@@ -24,7 +26,7 @@ class LBRoads{
 		$shell='osmconvert '.base_path('o5m/planet-highways.o5m').' --complete-ways --drop-author -b='.$lng_from.','.$lat_from.','.$lng_to.','.$lat_to.' -o='.base_path('o5m/'.$filename);
 		var_dump($shell);
 		var_dump(time());
-		$s=shell_exec($shell);
+                $s = Process::run($shell)->output();
 		var_dump(time());
 		return $filename;
 	}
@@ -46,7 +48,7 @@ class LBRoads{
 		$shell='osmconvert '.base_path('o5m/'.$filename).' --complete-ways --drop-author -b='.$bbox;
 //		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
 		//if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time().'|'.$shell);}
-		$s=shell_exec($shell);
+                $s = Process::run($shell)->output();
 		//if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
 		$z = new WeblamasXMLReader();
 		$z->xml($s);
