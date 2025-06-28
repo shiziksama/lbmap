@@ -1,4 +1,7 @@
 <?php
+
+namespace App\Services;
+
 class WeblamasXMLReader extends \XMLReader{
 	public function endElement(){
 		$q=$this->name;

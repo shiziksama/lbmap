@@ -7,12 +7,16 @@
         }
     ],
     "require": {
-      "ext-simplexml": "*",
-      "ext-xmlreader": "*",
-      "ext-zlib": "*",
-      "ext-imagick": "*"
+        "php": ">=8.1",
+        "laravel/framework": "^10.0",
+        "ext-simplexml": "*",
+        "ext-xmlreader": "*",
+        "ext-zlib": "*",
+        "ext-imagick": "*"
     },
-	"autoload": {
-		"classmap": ["classes"]
-	}
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
 }

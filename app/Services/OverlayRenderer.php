@@ -1,4 +1,7 @@
 <?php
+
+namespace App\Services;
+
 class OverlayRenderer{
 	
 	public static function lines_filter($pre_lines){

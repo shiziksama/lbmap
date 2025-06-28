@@ -1,4 +1,7 @@
 <?php
+
+namespace App\Services;
+
 class MapRenderer{
 	public static function download_osm($zoom,$x,$y){
 		$file_path=base_path('osm/'.$zoom.'/'.$x.'/'.$y.'.png');
