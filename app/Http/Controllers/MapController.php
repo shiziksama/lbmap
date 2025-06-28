@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\OverlayRenderer;
+use App\Jobs\RenderOverlay;
 use App\Services\MapRenderer;
 use Illuminate\Http\Response;
 
@@ -21,13 +21,14 @@ class MapController extends Controller
             $parent = base_path("lb_json/l_{$pzoom}.{$px}.{$py}.packed");
         }
         if (filesize(base_path("lb_json/l_{$pzoom}.{$px}.{$py}.packed")) < 13718638) {
-            OverlayRenderer::handle($z, $x, $y);
+            RenderOverlay::dispatchSync($z, $x, $y);
             $path = base_path("lb_overlay/$z/$x/$y.png");
             return response()->file($path, [
                 'Content-Type' => 'image/png',
             ]);
         }
-        file_put_contents(base_path("queue/$z.$x.$y"), '');
+
+        RenderOverlay::dispatch($z, $x, $y);
         return new Response('', 202);
     }
 
