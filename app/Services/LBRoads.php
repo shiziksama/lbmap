@@ -4,7 +4,7 @@ namespace App\Services;
 
 class LBRoads{
 	public function create_o5m($zoom,$x,$y){
-		while($zoom>3){
+		while($zoom>4){
 			$zoom-=1;
 			$x=floor($x/2);
 			$y=floor($y/2);
@@ -45,7 +45,7 @@ class LBRoads{
 	public function get_elements($filename,$bbox){
 		$shell='osmconvert '.base_path('o5m/'.$filename).' --complete-ways --drop-author -b='.$bbox;
 //		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
-		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time().'|'.$shell);}
+		//if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time().'|'.$shell);}
 		$s=shell_exec($shell);
 		//if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
 		$z = new WeblamasXMLReader();
@@ -63,6 +63,7 @@ class LBRoads{
 				$z->endElement();
 				continue;
 			}elseif($z->name=='way'&&$z->nodeType==\XmlReader::ELEMENT){
+				//var_dump((string)$z->getAttribute('id'));
 				$osm=simplexml_load_string($z->readOuterXml());
 				$tags=[];
 				$nodes=[];
@@ -133,44 +134,48 @@ class LBRoads{
 		return $lines;
 	}
 	public function file2lines($content){
-		return json_decode($content,true);
-		$lbroads=['great'=>1,'bicycle_undefined'=>2,'bikelane'=>3,'greatfoot'=>4,'foot'=>5,'undefined'=>6];
-		$lbroads=array_flip($lbroads);
-		$encoded=gzuncompress($content);
-		$pointlines=unpack('i*',$encoded);
-		//var_dump($pointlines);
-		//die();
-		//var_dump(array_slice($pointlines,0,40));
-		$k=1;
-		$lines=[];
-		$line=[];
-		$step='type';
-		while($k<count($pointlines)){
-			if($step=='type'){
-				$line['tags']['lbroads']=$lbroads[$pointlines[$k]];
-				$step='count';
-				$k++;
-			}
-			if($step=='count'){
-				$count=round($pointlines[$k]/2);
-				$step='coords';
-				$k++;;
-			}
-			while($step=='coords'&&$count>0){
-				$line['points'][]=['lat'=>$pointlines[$k]/10000000,'lng'=>$pointlines[$k+1]/10000000];
-				$k+=2;
-				$count--;
-			}
-			if($step=='coords'&&$count==0){
-				$step='type';
-				$lines[]=$line;
-				$line=[];
-			}
+		$lbroads = $this->getLbroadsMapping();
+		$encoded = gzuncompress($content);
+		$pointlines = array_values(unpack('i*', $encoded));
+		$lines = [];
+		while(!empty($pointlines)){
+			$lines[] = $this->parseLine($pointlines, $lbroads);
 		}
 		return $lines;
 	}
+
+	private function getLbroadsMapping(){
+		return [
+			1 => 'great',
+			2 => 'bicycle_undefined',
+			3 => 'bikelane',
+			4 => 'greatfoot',
+			5 => 'foot',
+			6 => 'undefined'
+		];
+	}
+
+	private function parseLine(&$pointlines, $lbroads){
+		$line = [];
+		$line['tags']['lbroads'] = $lbroads[array_shift($pointlines)];
+		$count = round(array_shift($pointlines) / 2);
+		$line['points'] = $this->parsePoints($pointlines, $count);
+		return $line;
+	}
+
+	private function parsePoints(&$pointlines, $count){
+		$points = [];
+		while($count > 0){
+			$points[] = [
+				'lat' => array_shift($pointlines) / 10000000,
+				'lng' => array_shift($pointlines) / 10000000
+			];
+			$count--;
+		}
+		return $points;
+	}
 	public function lines2file($lines){
-		return json_encode($lines);
+		//return json_encode($lines);
 		//$lines=array_slice($lines,0,2);
 		$lbroads=['great'=>1,'bicycle_undefined'=>2,'bikelane'=>3,'greatfoot'=>4,'foot'=>5,'undefined'=>6];
 		$packed='';
@@ -198,7 +203,7 @@ class LBRoads{
 		if(file_exists($path)){
 			return $this->file2lines(file_get_contents($path));
 		}
-		if($zoom>6){
+		if($zoom>7){
 			return $this->parse_parent_lines($zoom,$x,$y);
 		}
 		
