@@ -1,6 +1,7 @@
 This repository now contains a basic Laravel skeleton. Existing helper
 classes have been moved under `app/Services` so they can be autoloaded
-via PSR-4. Legacy PHP scripts remain in the project root for reference.
+via PSR-4. Legacy PHP scripts have been converted to Artisan commands
+and controllers so the project follows typical Laravel conventions.
 
 The Laravel router now serves the original HTML page at `/`. Tile
 requests for overlays and rendered maps are handled by `MapController`:
