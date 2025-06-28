@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\RenderOverlay;
 use App\Services\MapRenderer;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class MapController extends Controller
 {
@@ -13,14 +14,14 @@ class MapController extends Controller
         $pzoom = $z;
         $px = $x;
         $py = $y;
-        $parent = base_path("lb_json/l_{$pzoom}.{$px}.{$py}.packed");
-        while ($pzoom > 6 && !file_exists($parent)) {
+        $parent = "l_{$pzoom}.{$px}.{$py}.packed";
+        while ($pzoom > 6 && !Storage::disk('data_cache')->exists($parent)) {
             $pzoom -= 1;
             $px = floor($px / 2);
             $py = floor($py / 2);
-            $parent = base_path("lb_json/l_{$pzoom}.{$px}.{$py}.packed");
+            $parent = "l_{$pzoom}.{$px}.{$py}.packed";
         }
-        if (filesize(base_path("lb_json/l_{$pzoom}.{$px}.{$py}.packed")) < 13718638) {
+        if (Storage::disk('data_cache')->size($parent) < 13718638) {
             RenderOverlay::dispatchSync($z, $x, $y);
             $path = base_path("lb_overlay/$z/$x/$y.png");
             return response()->file($path, [

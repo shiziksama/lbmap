@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Jobs\RenderOverlay;
+use Illuminate\Support\Facades\Storage;
 
 class OverlayCron extends Command
 {
@@ -44,10 +45,11 @@ class OverlayCron extends Command
         RenderOverlay::dispatchSync(1, 1, 1);
 
         for ($i = 6; $i < 11; $i++) {
-            $files = glob(base_path('lb_json/l_' . $i . '*.packed'));
-            $files = array_filter($files, fn($item) => filesize($item) > 9000000);
+            $pattern = Storage::disk('data_cache')->path('l_' . $i . '*.packed');
+            $files = glob($pattern);
+            $files = array_filter($files, fn($item) => Storage::disk('data_cache')->size(basename($item)) > 9000000);
             foreach ($files as $file) {
-                preg_match('~/lb_json/l_(?<zoom>(\\d+)).(?<x>(\\d+)).(?<y>(\\d+)).packed~', $file, $m);
+                preg_match('/l_(?<zoom>\d+)\.(?<x>\d+)\.(?<y>\d+)\.packed/', basename($file), $m);
                 $renderChilds((int)$m['zoom'], (int)$m['x'], (int)$m['y']);
             }
         }
