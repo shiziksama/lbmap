@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\OverlayRenderer;
+use App\Jobs\RenderOverlay;
 
 class OverlayCron extends Command
 {
@@ -26,22 +26,22 @@ class OverlayCron extends Command
         ini_set('memory_limit', '25G');
 
         $renderChilds = function (int $zoom, int $x, int $y) use (&$renderChilds) {
-            OverlayRenderer::handle($zoom + 1, $x * 2, $y * 2);
-            OverlayRenderer::handle($zoom + 1, $x * 2, $y * 2 + 1);
-            OverlayRenderer::handle($zoom + 1, $x * 2 + 1, $y * 2);
-            OverlayRenderer::handle($zoom + 1, $x * 2 + 1, $y * 2 + 1);
+            RenderOverlay::dispatchSync($zoom + 1, $x * 2, $y * 2);
+            RenderOverlay::dispatchSync($zoom + 1, $x * 2, $y * 2 + 1);
+            RenderOverlay::dispatchSync($zoom + 1, $x * 2 + 1, $y * 2);
+            RenderOverlay::dispatchSync($zoom + 1, $x * 2 + 1, $y * 2 + 1);
         };
 
-        OverlayRenderer::handle(6, 32, 20);
+        RenderOverlay::dispatchSync(6, 32, 20);
         return Command::SUCCESS;
 
-        OverlayRenderer::handle(4, 8, 5);
-        OverlayRenderer::handle(3, 4, 2);
+        RenderOverlay::dispatchSync(4, 8, 5);
+        RenderOverlay::dispatchSync(3, 4, 2);
 
-        OverlayRenderer::handle(1, 0, 0);
-        OverlayRenderer::handle(1, 0, 1);
-        OverlayRenderer::handle(1, 1, 0);
-        OverlayRenderer::handle(1, 1, 1);
+        RenderOverlay::dispatchSync(1, 0, 0);
+        RenderOverlay::dispatchSync(1, 0, 1);
+        RenderOverlay::dispatchSync(1, 1, 0);
+        RenderOverlay::dispatchSync(1, 1, 1);
 
         for ($i = 6; $i < 11; $i++) {
             $files = glob(base_path('lb_json/l_' . $i . '*.packed'));
