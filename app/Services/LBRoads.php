@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Storage;
 
 class LBRoads{
 	public function create_o5m($zoom,$x,$y){
@@ -131,9 +132,9 @@ class LBRoads{
 				}
 			}
 		}
-		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.packed');
-		file_put_contents($path,$this->lines2file($lines));
-		return $lines;
+               $file = 'l_'.$zoom.'.'.$x.'.'.$y.'.packed';
+               Storage::disk('data_cache')->put($file, $this->lines2file($lines));
+               return $lines;
 	}
 	public function file2lines($content){
 		$lbroads = $this->getLbroadsMapping();
@@ -200,14 +201,14 @@ class LBRoads{
 		$compressed=gzcompress($packed,9);
 		return $compressed;
 	}
-	public function get_lines($zoom,$x,$y){
-		$path=base_path('lb_json/l_'.$zoom.'.'.$x.'.'.$y.'.packed');
-		if(file_exists($path)){
-			return $this->file2lines(file_get_contents($path));
-		}
-		if($zoom>7){
-			return $this->parse_parent_lines($zoom,$x,$y);
-		}
+       public function get_lines($zoom,$x,$y){
+               $file = 'l_'.$zoom.'.'.$x.'.'.$y.'.packed';
+               if(Storage::disk('data_cache')->exists($file)){
+                       return $this->file2lines(Storage::disk('data_cache')->get($file));
+               }
+               if($zoom>7){
+                       return $this->parse_parent_lines($zoom,$x,$y);
+               }
 		
 		$elements=$this->get_converted($zoom,$x,$y);
 		
@@ -233,7 +234,7 @@ class LBRoads{
 			}
 		}
 //		if(php_sapi_name()=='cli'){var_dump('filtered_lines|time:'.time());}
-		file_put_contents($path,$this->lines2file($lines));
-		return $lines;	
-	}
+               Storage::disk('data_cache')->put($file,$this->lines2file($lines));
+               return $lines;
+       }
 }
