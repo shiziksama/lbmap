@@ -23,7 +23,7 @@ class MapController extends Controller
         }
         if (Storage::disk('data_cache')->size($parent) < 13718638) {
             RenderOverlay::dispatchSync($z, $x, $y);
-            $path = base_path("lb_overlay/$z/$x/$y.png");
+            $path = Storage::disk('public')->path("lb_overlay/$z/$x/$y.png");
             return response()->file($path, [
                 'Content-Type' => 'image/png',
             ]);
@@ -36,7 +36,7 @@ class MapController extends Controller
     public function map($z, $x, $y)
     {
         MapRenderer::handle($z, $x, $y);
-        $path = base_path("lb_map/$z/$x/$y.png");
+        $path = Storage::disk('public')->path("lb_map/$z/$x/$y.png");
         return response()->file($path, [
             'Content-Type' => 'image/png',
         ]);

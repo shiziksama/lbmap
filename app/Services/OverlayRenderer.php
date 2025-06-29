@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Storage;
+
 class OverlayRenderer{
 	
 	public static function lines_filter($pre_lines){
@@ -22,9 +24,9 @@ class OverlayRenderer{
 		}
 		return $length;
 	}
-	public static function get_image($zoom,$x,$y){
-		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
-		$overlay=file_get_contents($file_path);
+        public static function get_image($zoom,$x,$y){
+                $file_path="lb_overlay/$zoom/$x/$y.png";
+                $overlay=Storage::disk('public')->get($file_path);
 		$overlayI=new \Imagick();
 		$overlayI->readImageBlob($overlay);
 		return $overlayI;
@@ -53,17 +55,13 @@ class OverlayRenderer{
 		$overlayI->compositeImage($overlays[3],\imagick::COMPOSITE_OVER,256,256);
 		
 		
-		$imagefile=$overlayI->getImageBlob();
-		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
-		$dirname=pathinfo($file_path,PATHINFO_DIRNAME);
-		if(!is_dir($dirname)){
-			mkdir($dirname,0755,true);
-		}
-		file_put_contents($file_path,$imagefile);
-	}
+                $imagefile=$overlayI->getImageBlob();
+                $file_path="lb_overlay/$zoom/$x/$y.png";
+                Storage::disk('public')->put($file_path,$imagefile);
+        }
     public static function handle($zoom,$x,$y){
-		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
-		if(file_exists($file_path))return;
+                $file_path="lb_overlay/$zoom/$x/$y.png";
+                if(Storage::disk('public')->exists($file_path))return;
 		if(php_sapi_name()=='cli'){var_dump('handle|'.str_pad($zoom,$zoom).'|'.$x.'|'.$y.'|time:'.time());}
 		if($zoom<6) return self::handleConcat($zoom,$x,$y);
 		//if($zoom<10) return'';
@@ -126,12 +124,8 @@ class OverlayRenderer{
 		}
 		//if(php_sapi_name()=='cli'){var_dump('putfile|time:'.time());}
 			
-		$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
-		$dirname=pathinfo($file_path,PATHINFO_DIRNAME);
-		if(!is_dir($dirname)){
-			mkdir($dirname,0755,true);
-		}
-		file_put_contents($file_path,$imagefile);
-		//if(php_sapi_name()=='cli'){var_dump('completed|time:'.time());}
-		}
+                $file_path="lb_overlay/$zoom/$x/$y.png";
+                Storage::disk('public')->put($file_path,$imagefile);
+                //if(php_sapi_name()=='cli'){var_dump('completed|time:'.time());}
+                }
 }
