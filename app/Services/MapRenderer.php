@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Storage;
+
 class MapRenderer{
 	public static function download_osm($zoom,$x,$y){
-		$file_path=base_path('osm/'.$zoom.'/'.$x.'/'.$y.'.png');
+                $file_path="osm/$zoom/$x/$y.png";
 		$options = array(
 		  'http'=>array(
 			'method'=>"GET",
@@ -15,21 +17,17 @@ class MapRenderer{
 		);
 		$context = stream_context_create($options);
 		$imagefile=file_get_contents('https://a.tile.openstreetmap.org/'.$zoom.'/'.$x.'/'.$y.'.png',false,$context);
-		$dirname=pathinfo($file_path,PATHINFO_DIRNAME);
-		if(!is_dir($dirname)){
-			mkdir($dirname,0755,true);
-		}
-		file_put_contents($file_path,$imagefile);
+                Storage::disk('public')->put($file_path,$imagefile);
 	}
 	public static function getOverlay($zoom,$x,$y){
-		if($zoom>5){
-			$file_path=base_path('lb_overlay/'.$zoom.'/'.$x.'/'.$y.'.png');
-			if(!file_exists($file_path)){
-				OverlayRenderer::handle($zoom,$x,$y);
-			}
-			
-			
-			$overlay=file_get_contents($file_path);
+                if($zoom>5){
+                        $file_path="lb_overlay/$zoom/$x/$y.png";
+                        if(!Storage::disk('public')->exists($file_path)){
+                                OverlayRenderer::handle($zoom,$x,$y);
+                        }
+
+
+                        $overlay=Storage::disk('public')->get($file_path);
 			$overlayI=new \Imagick();
 			$overlayI->readImageBlob($overlay);
 			return $overlayI;
@@ -57,19 +55,19 @@ class MapRenderer{
 		return $overlayI;
 	}
     public static function handle($zoom,$x,$y){
-		$file_path=base_path('lb_map/'.$zoom.'/'.$x.'/'.$y.'.png');
-		if(file_exists($file_path)){
-			var_dump('exists');
-			//return ;
-		}
+                $file_path="lb_map/$zoom/$x/$y.png";
+                if(Storage::disk('public')->exists($file_path)){
+                        var_dump('exists');
+                        //return ;
+                }
 		if(php_sapi_name()=='cli'){
 			var_dump('render_map|zoom:'.$zoom.' x:'.$x.' y: '.$y);
 		}
-		$file_path=base_path('osm/'.$zoom.'/'.$x.'/'.$y.'.png');
-		if(!file_exists($file_path)){
-			self::download_osm($zoom,$x,$y);
-		}
-		$osm=file_get_contents(base_path('osm/'.$zoom.'/'.$x.'/'.$y.'.png'));
+                $file_path="osm/$zoom/$x/$y.png";
+                if(!Storage::disk('public')->exists($file_path)){
+                        self::download_osm($zoom,$x,$y);
+                }
+                $osm=Storage::disk('public')->get($file_path);
 		$overlayI=self::getOverlay($zoom,$x,$y);
 
 		
@@ -89,12 +87,7 @@ class MapRenderer{
 		
 		
 		$imagefile=$osmI->getImageBlob();
-		$file_path=base_path('lb_map/'.$zoom.'/'.$x.'/'.$y.'.png');
-		$dirname=pathinfo($file_path,PATHINFO_DIRNAME);
-		if(!is_dir($dirname)){
-			mkdir($dirname,0755,true);
-		}
-		file_put_contents($file_path,$imagefile);
+                Storage::disk('public')->put("lb_map/$zoom/$x/$y.png",$imagefile);
         //
     }
 }
