@@ -6,7 +6,15 @@ use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
 class LBRoads{
-	public function create_o5m($zoom,$x,$y){
+       private function runOsmconvert(string $filename, string $params, bool $returnOutput = true)
+       {
+               $command = 'osmconvert ' . $filename . ' ' . $params;
+               $result = Process::run($command);
+
+               return $returnOutput ? $result->output() : '';
+       }
+
+        public function create_o5m($zoom,$x,$y){
 		while($zoom>4){
 			$zoom-=1;
 			$x=floor($x/2);
@@ -24,13 +32,14 @@ class LBRoads{
 		$lat_to=rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
 		$lat_from=rad2deg(atan(sinh(pi() * (1 - 2 * ($y+1) / $items_count))));
 		
-		$shell='osmconvert '.base_path('o5m/planet-highways.o5m').' --complete-ways --drop-author -b='.$lng_from.','.$lat_from.','.$lng_to.','.$lat_to.' -o='.base_path('o5m/'.$filename);
-		var_dump($shell);
-		var_dump(time());
-                $s = Process::run($shell)->output();
-		var_dump(time());
-		return $filename;
-	}
+               $osmFile = base_path('o5m/planet-highways.o5m');
+               $params = '--complete-ways --drop-author -b='.$lng_from.','.$lat_from.','.$lng_to.','.$lat_to.' -o='.base_path('o5m/'.$filename);
+               var_dump('osmconvert '.$osmFile.' '.$params);
+               var_dump(time());
+               $this->runOsmconvert($osmFile, $params, false);
+               var_dump(time());
+               return $filename;
+       }
 	public function get_converted($zoom,$x,$y){
 		$filename=$this->create_o5m($zoom,$x,$y);
 		$items_count=pow(2,$zoom);
@@ -46,10 +55,10 @@ class LBRoads{
 		return $this->get_elements($filename,$bbox);
 	}
 	public function get_elements($filename,$bbox){
-		$shell='osmconvert '.base_path('o5m/'.$filename).' --complete-ways --drop-author -b='.$bbox;
-//		if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time());}
-		//if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time().'|'.$shell);}
-                $s = Process::run($shell)->output();
+                $osmFile = base_path('o5m/'.$filename);
+                $params = '--complete-ways --drop-author -b=' . $bbox;
+//              if(php_sapi_name()=='cli'){var_dump('start_convert|time:'.time().'|osmconvert '.$osmFile.' '.$params);}
+                $s = $this->runOsmconvert($osmFile, $params);
 		//if(php_sapi_name()=='cli'){var_dump('get_xml|time:'.time());}
 		$z = new WeblamasXMLReader();
 		$z->xml($s);
