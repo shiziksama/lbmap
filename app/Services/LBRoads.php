@@ -4,12 +4,18 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class LBRoads{
        private function runOsmconvert(string $filename, string $params, bool $returnOutput = true)
        {
                $command = 'osmconvert ' . $filename . ' ' . $params;
-               $result = Process::run($command);
+
+               $lockName = 'osmconvert:' . md5($filename);
+
+               $result = Cache::lock($lockName, 600)->block(0, function () use ($command) {
+                       return Process::run($command);
+               });
 
                return $returnOutput ? $result->output() : '';
        }
