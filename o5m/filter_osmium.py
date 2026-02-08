@@ -143,9 +143,22 @@ def main():
     )
     parser.add_argument("--in", dest="infile", required=True, help="Input OSM file (.pbf/.o5m/.osm)")
     parser.add_argument("--out", dest="outfile", required=True, help="Output OSM file (.o5m/.pbf/.osm)")
+    parser.add_argument(
+        "--out-format",
+        dest="out_format",
+        default="",
+        help="Force output format (e.g. o5m, pbf, osm). Required when --out is '-' (stdout).",
+    )
     args = parser.parse_args()
 
-    writer = osm.SimpleWriter(args.outfile)
+    out_format = args.out_format
+    if args.outfile == "-" and not out_format:
+        out_format = "osm"
+
+    if out_format:
+        writer = osm.SimpleWriter(osm.io.File(args.outfile, out_format))
+    else:
+        writer = osm.SimpleWriter(args.outfile)
     try:
         handler = FilterHandler(writer)
         handler.apply_file(args.infile, locations=True)
