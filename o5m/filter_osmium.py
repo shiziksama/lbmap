@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import time
 
 try:
     import osmium as osm
@@ -159,11 +160,16 @@ def main():
         writer = osm.SimpleWriter(osm.io.File(args.outfile, out_format))
     else:
         writer = osm.SimpleWriter(args.outfile)
+    start = time.perf_counter()
     try:
         handler = FilterHandler(writer)
         handler.apply_file(args.infile, locations=True)
     finally:
         writer.close()
+        elapsed = time.perf_counter() - start
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        sys.stderr.write(f"Elapsed: {minutes}m {seconds}s\n")
 
 
 if __name__ == "__main__":
