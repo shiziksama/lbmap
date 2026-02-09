@@ -171,59 +171,6 @@ TagMap modify_tags(TagMap tags) {
     }
     return tags;
 }
-
-bool is_bicycledesignated(const TagMap& tags) {
-    static const std::unordered_set<std::string> types = {
-        "track",
-        "separate",
-        "opposite_track",
-        "use_sidepath",
-    };
-
-    bool designated = false;
-    auto get = [&](const std::string& k) -> std::string {
-        auto it = tags.find(k);
-        return it == tags.end() ? std::string() : it->second;
-    };
-
-    designated = designated || (get("bicycle") == "designated" || get("bicycle") == "use_sidepath");
-    designated = designated || (get("bicycle_road") == "yes");
-    designated = designated || (get("cyclestreet") == "yes");
-    designated = designated || (types.find(get("cycleway")) != types.end());
-    designated = designated || (types.find(get("cycleway:left")) != types.end());
-    designated = designated || (types.find(get("cycleway:right")) != types.end());
-    designated = designated || (types.find(get("cycleway:both")) != types.end());
-    designated = designated || (get("highway") == "cycleway");
-    return designated;
-}
-
-bool is_footdesignated(const TagMap& tags) {
-    bool designated = false;
-    auto get = [&](const std::string& k) -> std::string {
-        auto it = tags.find(k);
-        return it == tags.end() ? std::string() : it->second;
-    };
-
-    designated = designated || (get("foot") == "designated" || get("foot") == "use_sidepath");
-    designated = designated || (get("highway") == "footway");
-    designated = designated || (get("footway") == "sidewalk");
-    return designated;
-}
-
-bool is_surface_great(const TagMap& tags) {
-    auto get = [&](const std::string& k) -> std::string {
-        auto it = tags.find(k);
-        return it == tags.end() ? std::string() : it->second;
-    };
-
-    const std::string surface = get("surface");
-    if (surface == "asphalt" || surface == "paving_stones" || surface == "concrete") {
-        return true;
-    }
-    const std::string smoothness = get("smoothness");
-    return (smoothness == "good" || smoothness == "excellent");
-}
-
 bool no_surface_information(const TagMap& tags) {
     std::string all_tags;
     all_tags.reserve(tags.size() * 8);
@@ -232,67 +179,6 @@ bool no_surface_information(const TagMap& tags) {
         all_tags += kv.second;
     }
     return (all_tags.find("surface") == std::string::npos) && (all_tags.find("smoothness") == std::string::npos);
-}
-
-bool test_great(const TagMap& tags) {
-    return is_bicycledesignated(tags) && is_surface_great(tags);
-}
-
-bool test_bicycleundefined(const TagMap& tags) {
-    return is_bicycledesignated(tags) && no_surface_information(tags);
-}
-
-bool test_bikelane(const TagMap& tags) {
-    static const std::unordered_set<std::string> lanes = {
-        "lane",
-        "line",
-        "shared_lane",
-        "share_busway",
-        "opposite_lane",
-    };
-
-    auto get = [&](const std::string& k) -> std::string {
-        auto it = tags.find(k);
-        return it == tags.end() ? std::string() : it->second;
-    };
-
-    return lanes.find(get("cycleway")) != lanes.end() ||
-           lanes.find(get("cycleway:left")) != lanes.end() ||
-           lanes.find(get("cycleway:right")) != lanes.end() ||
-           lanes.find(get("cycleway:both")) != lanes.end();
-}
-
-bool test_greatother(const TagMap& tags) {
-    std::string all_tags;
-    all_tags.reserve(tags.size() * 8);
-    for (const auto& kv : tags) {
-        all_tags += kv.first;
-        all_tags += kv.second;
-    }
-    if (all_tags.find("cycle") != std::string::npos) {
-        return false;
-    }
-    if (is_footdesignated(tags) && is_surface_great(tags)) {
-        return true;
-    }
-    auto it = tags.find("highway");
-    if (it != tags.end() && it->second == "track" && is_surface_great(tags)) {
-        return true;
-    }
-    return false;
-}
-
-bool test_foot(const TagMap& tags) {
-    std::string all_tags;
-    all_tags.reserve(tags.size() * 8);
-    for (const auto& kv : tags) {
-        all_tags += kv.first;
-        all_tags += kv.second;
-    }
-    if (all_tags.find("cycle") != std::string::npos) {
-        return false;
-    }
-    return is_footdesignated(tags) && no_surface_information(tags);
 }
 
 bool test_no(const TagMap& tags) {
@@ -380,35 +266,6 @@ bool test_no(const TagMap& tags) {
     return false;
 }
 
-std::string test_element(const TagMap& tags) {
-    if (tags.empty()) {
-        return "no";
-    }
-    auto it = tags.find("lbroads");
-    if (it != tags.end()) {
-        return it->second;
-    }
-    if (test_no(tags)) {
-        return "no";
-    }
-    if (test_great(tags)) {
-        return "great";
-    }
-    if (test_bicycleundefined(tags)) {
-        return "bicycle_undefined";
-    }
-    if (test_bikelane(tags)) {
-        return "bikelane";
-    }
-    if (test_greatother(tags)) {
-        return "greatfoot";
-    }
-    if (test_foot(tags)) {
-        return "foot";
-    }
-    return "undefined";
-}
-
 TagMap taglist_to_map(const osmium::TagList& tags) {
     TagMap out;
     out.reserve(tags.size());
@@ -440,31 +297,24 @@ struct FilterHandler : public osmium::handler::Handler {
 
     void way(const osmium::Way& w) {
         ++ways_in_;
-        TagMap tags = taglist_to_map(w.tags());
-        if (tags.find("highway") == tags.end()) {
+        const TagMap original_tags = taglist_to_map(w.tags());
+        if (original_tags.find("highway") == original_tags.end()) {
             maybe_log();
             return;
         }
-        if (!has_keyword(tags)) {
+        if (!has_keyword(original_tags)) {
             maybe_log();
             return;
         }
-        if (drop_way(tags)) {
+        if (drop_way(original_tags)) {
             maybe_log();
             return;
         }
 
-        tags = drop_tags(tags);
-        tags = modify_tags(std::move(tags));
-        const std::string result = test_element(tags);
-        if (result == "no") {
+        TagMap tags = drop_tags(original_tags);
+        if (test_no(tags)) {
             maybe_log();
             return;
-        }
-        if (kSpecialResults.find(result) != kSpecialResults.end()) {
-            tags.clear();
-            tags["lbroads"] = result;
-            tags["highway"] = "lbroad";
         }
 
         osmium::memory::Buffer buffer{4096, osmium::memory::Buffer::auto_grow::yes};
@@ -481,8 +331,8 @@ struct FilterHandler : public osmium::handler::Handler {
 
             {
                 osmium::builder::TagListBuilder tlb{buffer, &wb};
-                for (const auto& kv : tags) {
-                    tlb.add_tag(kv.first.c_str(), kv.second.c_str());
+                for (const auto& tag : w.tags()) {
+                    tlb.add_tag(tag.key(), tag.value());
                 }
             }
         }
