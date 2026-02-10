@@ -302,14 +302,17 @@ struct FilterHandler : public osmium::handler::Handler {
 
   private:
     static std::string format_count(std::uint64_t value) {
-        std::ostringstream oss;
-        try {
-            oss.imbue(std::locale(""));
-        } catch (const std::exception&) {
-            // Fallback to default "C" locale if system locale is unavailable.
+        std::string digits = std::to_string(value);
+        std::string out;
+        out.reserve(digits.size() + digits.size() / 3);
+        const std::size_t len = digits.size();
+        for (std::size_t i = 0; i < len; ++i) {
+            if (i > 0 && ((len - i) % 3 == 0)) {
+                out.push_back(' ');
+            }
+            out.push_back(digits[i]);
         }
-        oss << value;
-        return oss.str();
+        return out;
     }
 
     void maybe_log() {
