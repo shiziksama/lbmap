@@ -40,15 +40,47 @@ struct BadTags {
     std::vector<std::pair<std::string, std::string>> pairs_list;
 };
 
-const std::unordered_set<std::string> kDropTagsSurface = {"sett", "paved", "compacted"};
+BadTags load_bad_tags(const std::string& path) {
+    BadTags data;
+    std::ifstream in(path);
+    if (!in.is_open()) {
+        std::cerr << "Warning: cannot open bad tags file: " << path << "\n";
+        return data;
+    }
 
-const std::unordered_set<std::string> kSpecialResults = {
-    "great",
-    "bicycle_undefined",
-    "bikelane",
-    "greatfoot",
-    "foot",
-};
+    try {
+        nlohmann::json j;
+        in >> j;
+        if (!j.contains("bad_pairs") || !j["bad_pairs"].is_array()) {
+            return data;
+        }
+        for (const auto& item : j["bad_pairs"]) {
+            if (!item.is_object() || item.size() != 1) {
+                continue;
+            }
+            const auto it = item.begin();
+            if (!it.key().empty() && it.value().is_string()) {
+                const std::string key = it.key();
+                const std::string val = it.value().get<std::string>();
+                if (!val.empty()) {
+                    data.pairs_set.emplace(key, val);
+                    data.pairs_list.emplace_back(key, val);
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Warning: failed to parse bad tags JSON: " << e.what() << "\n";
+    }
+
+    return data;
+}
+
+const BadTags& bad_tags() {
+    static const BadTags data = load_bad_tags("o5m/bad_tags.json");
+    return data;
+}
+
+const std::unordered_set<std::string> kDropTagsSurface = {"sett", "paved", "compacted"};
 
 std::string to_lower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -70,7 +102,7 @@ bool has_keyword(const TagMap& tags) {
 
 bool drop_way(const TagMap& tags) {
     for (const auto& kv : tags) {
-        if (kDropWays.find(kv) != kDropWays.end()) {
+        if (bad_tags().pairs_set.find(kv) != bad_tags().pairs_set.end()) {
             return true;
         }
     }
@@ -81,82 +113,7 @@ bool starts_with(const std::string& s, const std::string& prefix) {
     return s.rfind(prefix, 0) == 0;
 }
 
-TagMap drop_tags(const TagMap& tags) {
-    TagMap out;
-    out.reserve(tags.size());
 
-    for (const auto& kv : tags) {
-        const std::string& k = kv.first;
-        const std::string& v = kv.second;
-
-        if (v == "no" || v == "unknown") {
-            continue;
-        }
-        if (starts_with(k, "name")) {
-            continue;
-        }
-        if (starts_with(k, "motorcycle")) {
-            continue;
-        }
-        if (k == "sidewalk") {
-            continue;
-        }
-        if (k == "cycleway" && v == "opposite") {
-            continue;
-        }
-        if (k == "bicycle" && v == "yes") {
-            continue;
-        }
-        if (k == "foot" && v == "yes") {
-            continue;
-        }
-        if (k == "surface" && kDropTagsSurface.find(v) != kDropTagsSurface.end()) {
-            continue;
-        }
-        if (k == "smoothness" && v == "intermediate") {
-            continue;
-        }
-        if (starts_with(k, "class:bicycle")) {
-            continue;
-        }
-        if (k == "oneway:bicycle") {
-            continue;
-        }
-        if (k == "bicycle" && v == "dismount") {
-            continue;
-        }
-        if (k == "bicycle:backwards") {
-            continue;
-        }
-        if (starts_with(k, "note")) {
-            continue;
-        }
-        if (starts_with(k, "check_date")) {
-            continue;
-        }
-        if (starts_with(k, "ramp")) {
-            continue;
-        }
-        if (starts_with(k, "fixme")) {
-            continue;
-        }
-        if (k == "designation" && v == "public_footpath") {
-            continue;
-        }
-        out.emplace(k, v);
-    }
-    return out;
-}
-
-TagMap modify_tags(TagMap tags) {
-    auto it = tags.find("cycleway:surface");
-    if (it != tags.end()) {
-        tags["surface"] = it->second;
-        tags["bicycle"] = "designated";
-        tags.erase(it);
-    }
-    return tags;
-}
 bool no_surface_information(const TagMap& tags) {
     std::string all_tags;
     all_tags.reserve(tags.size() * 8);
@@ -177,6 +134,7 @@ bool test_no(const TagMap& tags) {
 
     const bool no_great_tags = (all_tags.find("cycle") == std::string::npos) &&
                                (all_tags.find("foot") == std::string::npos) &&
+                               (all_tags.find("walk") == std::string::npos) &&
                                (all_tags.find("pedestrian") == std::string::npos);
     const bool no_surface = no_surface_information(tags);
 
@@ -188,65 +146,6 @@ bool test_no(const TagMap& tags) {
     }
     if (no_surface && no_great_tags && highway_is_track) {
         return true;
-    }
-
-    static const std::vector<std::pair<std::string, std::string>> filters = {
-        {"highway", "construction"},
-        {"highway", "steps"},
-        {"highway", "proposed"},
-        {"highway", "platform"},
-        {"highway", "bus_stop"},
-        {"highway", "rest_area"},
-        {"highway", "bridleway"},
-        {"highway", "via_ferrata"},
-        {"highway", "planned"},
-        {"highway", "corridor"},
-        {"highway", "raceway"},
-        {"highway", "elevator"},
-        {"highway", "emergency_bay"},
-        {"highway", "services"},
-        {"amenity", "parking"},
-        {"amenity", "services"},
-        {"smoothness", "bad"},
-        {"designation", "public_bridleway"},
-        {"smoothness", "very_bad"},
-        {"smoothness", "very_horrible"},
-        {"smoothness", "horrible"},
-        {"smoothness", "impassable"},
-        {"smoothness", "medium"},
-        {"footway", "crossing"},
-        {"surface", "dirt"},
-        {"surface", "unpaved"},
-        {"surface", "gravel"},
-        {"surface", "grass"},
-        {"surface", "ground"},
-        {"surface", "sand"},
-        {"surface", "earth"},
-        {"surface", "pebblestone"},
-        {"surface", "fine_gravel"},
-        {"surface", "cobblestone"},
-        {"surface", "concrete:plates"},
-        {"surface", "concrete:lanes"},
-        {"surface", "wood"},
-        {"surface", "metal"},
-        {"surface", "stone"},
-        {"surface", "grass_paver"},
-        {"area", "yes"},
-        {"ice_road", "yes"},
-        {"winter_road", "yes"},
-        {"tracktype", "grade2"},
-        {"tracktype", "grade3"},
-        {"tracktype", "grade4"},
-        {"tracktype", "grade5"},
-        {"tracktype", "indeterminate"},
-        {"access", "private"},
-    };
-
-    for (const auto& kv : filters) {
-        auto it = tags.find(kv.first);
-        if (it != tags.end() && it->second == kv.second) {
-            return true;
-        }
     }
 
     return false;
@@ -296,12 +195,14 @@ struct FilterHandler : public osmium::handler::Handler {
             maybe_log();
             return;
         }
-
-        TagMap tags = drop_tags(original_tags);
-        if (test_no(tags)) {
+        /*
+        if (test_no(original_tags)) {
             maybe_log();
             return;
         }
+            */
+            
+        
 
         osmium::memory::Buffer buffer{4096, osmium::memory::Buffer::auto_grow::yes};
         {
