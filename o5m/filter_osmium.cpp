@@ -38,6 +38,7 @@ struct PairHash {
 struct BadTags {
     std::unordered_set<std::pair<std::string, std::string>, PairHash> pairs_set;
     std::vector<std::pair<std::string, std::string>> pairs_list;
+    std::vector<std::string> drop_key_patterns;
 };
 
 BadTags load_bad_tags(const std::string& path) {
@@ -51,20 +52,29 @@ BadTags load_bad_tags(const std::string& path) {
     try {
         nlohmann::json j;
         in >> j;
-        if (!j.contains("bad_pairs") || !j["bad_pairs"].is_array()) {
-            return data;
-        }
-        for (const auto& item : j["bad_pairs"]) {
-            if (!item.is_object() || item.size() != 1) {
-                continue;
+        if (j.contains("bad_pairs") && j["bad_pairs"].is_array()) {
+            for (const auto& item : j["bad_pairs"]) {
+                if (!item.is_object() || item.size() != 1) {
+                    continue;
+                }
+                const auto it = item.begin();
+                if (!it.key().empty() && it.value().is_string()) {
+                    const std::string key = it.key();
+                    const std::string val = it.value().get<std::string>();
+                    if (!val.empty()) {
+                        data.pairs_set.emplace(key, val);
+                        data.pairs_list.emplace_back(key, val);
+                    }
+                }
             }
-            const auto it = item.begin();
-            if (!it.key().empty() && it.value().is_string()) {
-                const std::string key = it.key();
-                const std::string val = it.value().get<std::string>();
-                if (!val.empty()) {
-                    data.pairs_set.emplace(key, val);
-                    data.pairs_list.emplace_back(key, val);
+        }
+        if (j.contains("drop_keys") && j["drop_keys"].is_array()) {
+            for (const auto& item : j["drop_keys"]) {
+                if (item.is_string()) {
+                    const std::string pattern = item.get<std::string>();
+                    if (!pattern.empty()) {
+                        data.drop_key_patterns.push_back(pattern);
+                    }
                 }
             }
         }
@@ -85,6 +95,51 @@ const std::unordered_set<std::string> kDropTagsSurface = {"sett", "paved", "comp
 std::string to_lower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return s;
+}
+
+bool matches_pattern(const std::string& text, const std::string& pattern) {
+    const bool has_wildcard = pattern.find('%') != std::string::npos;
+    if (!has_wildcard) {
+        return text == pattern;
+    }
+    if (pattern == "%") {
+        return true;
+    }
+
+    const bool starts_with_wildcard = !pattern.empty() && pattern.front() == '%';
+    const bool ends_with_wildcard = !pattern.empty() && pattern.back() == '%';
+
+    if (starts_with_wildcard && ends_with_wildcard) {
+        if (pattern.size() <= 2) {
+            return true;
+        }
+        const std::string core = pattern.substr(1, pattern.size() - 2);
+        return text.find(core) != std::string::npos;
+    }
+    if (starts_with_wildcard) {
+        const std::string core = pattern.substr(1);
+        if (text.size() < core.size()) {
+            return false;
+        }
+        return text.compare(text.size() - core.size(), core.size(), core) == 0;
+    }
+    if (ends_with_wildcard) {
+        const std::string core = pattern.substr(0, pattern.size() - 1);
+        return text.rfind(core, 0) == 0;
+    }
+
+    return text == pattern;
+}
+
+bool should_drop_key(const std::string& key) {
+    const std::string key_l = to_lower(key);
+    for (const auto& pattern_raw : bad_tags().drop_key_patterns) {
+        const std::string pattern = to_lower(pattern_raw);
+        if (matches_pattern(key_l, pattern)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool has_keyword(const TagMap& tags) {
@@ -160,6 +215,18 @@ TagMap taglist_to_map(const osmium::TagList& tags) {
     return out;
 }
 
+TagMap drop_tags(const TagMap& tags) {
+    TagMap out;
+    out.reserve(tags.size());
+    for (const auto& kv : tags) {
+        if (should_drop_key(kv.first)) {
+            continue;
+        }
+        out.emplace(kv.first, kv.second);
+    }
+    return out;
+}
+
 struct FilterHandler : public osmium::handler::Handler {
     explicit FilterHandler(osmium::io::Writer& writer)
         : writer_(writer),
@@ -187,7 +254,8 @@ struct FilterHandler : public osmium::handler::Handler {
             maybe_log();
             return;
         }
-        if (!has_keyword(original_tags)) {
+        const TagMap filtered_tags = drop_tags(original_tags);
+        if (!has_keyword(filtered_tags)) {
             maybe_log();
             return;
         }
@@ -195,12 +263,12 @@ struct FilterHandler : public osmium::handler::Handler {
             maybe_log();
             return;
         }
-        /*
+        
         if (test_no(original_tags)) {
             maybe_log();
             return;
         }
-            */
+            
             
         
 
@@ -218,8 +286,8 @@ struct FilterHandler : public osmium::handler::Handler {
 
             {
                 osmium::builder::TagListBuilder tlb{buffer, &wb};
-                for (const auto& tag : w.tags()) {
-                    tlb.add_tag(tag.key(), tag.value());
+                for (const auto& kv : filtered_tags) {
+                    tlb.add_tag(kv.first, kv.second);
                 }
             }
         }
