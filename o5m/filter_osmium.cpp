@@ -15,6 +15,8 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <locale>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -263,11 +265,11 @@ struct FilterHandler : public osmium::handler::Handler {
             maybe_log();
             return;
         }
-        
+        /*
         if (test_no(original_tags)) {
             maybe_log();
             return;
-        }
+        }*/
             
             
         
@@ -299,6 +301,17 @@ struct FilterHandler : public osmium::handler::Handler {
     }
 
   private:
+    static std::string format_count(std::uint64_t value) {
+        std::ostringstream oss;
+        try {
+            oss.imbue(std::locale(""));
+        } catch (const std::exception&) {
+            // Fallback to default "C" locale if system locale is unavailable.
+        }
+        oss << value;
+        return oss.str();
+    }
+
     void maybe_log() {
         const auto now = std::chrono::steady_clock::now();
         if (now - last_log_ < std::chrono::seconds(5)) {
@@ -307,10 +320,10 @@ struct FilterHandler : public osmium::handler::Handler {
         last_log_ = now;
         const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start_);
         std::cerr << "Processed: "
-                  << "nodes_in=" << nodes_in_
-                  << " nodes_out=" << nodes_out_
-                  << " ways_in=" << ways_in_
-                  << " ways_out=" << ways_out_
+                  << "nodes_in=" << format_count(nodes_in_)
+                  << " nodes_out=" << format_count(nodes_out_)
+                  << " ways_in=" << format_count(ways_in_)
+                  << " ways_out=" << format_count(ways_out_)
                   << " elapsed=" << elapsed.count() << "s\n";
         std::cerr.flush();
     }
