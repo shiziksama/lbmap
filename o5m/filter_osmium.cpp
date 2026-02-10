@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
-#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -21,11 +21,13 @@
 #include <utility>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 namespace {
 
 using TagMap = std::unordered_map<std::string, std::string>;
 
-const std::vector<std::string> kKeywords = {"cycle", "foot", "track", "pedestrian"};
+const std::vector<std::string> kKeywords = {"cycle", "foot", "track", "pedestrian","walk"};
 
 struct PairHash {
     std::size_t operator()(const std::pair<std::string, std::string>& p) const noexcept {
@@ -33,9 +35,9 @@ struct PairHash {
     }
 };
 
-    {"tracktype", "grade3"},
-    {"tracktype", "grade4"},
-    {"tracktype", "grade5"},
+struct BadTags {
+    std::unordered_set<std::pair<std::string, std::string>, PairHash> pairs_set;
+    std::vector<std::pair<std::string, std::string>> pairs_list;
 };
 
 const std::unordered_set<std::string> kDropTagsSurface = {"sett", "paved", "compacted"};
