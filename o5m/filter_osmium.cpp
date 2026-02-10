@@ -33,22 +33,6 @@ struct PairHash {
     }
 };
 
-const std::unordered_set<std::pair<std::string, std::string>, PairHash> kDropWays = {
-    {"surface", "ground"},
-    {"surface", "grass"},
-    {"surface", "gravel"},
-    {"surface", "dirt"},
-    {"surface", "unpaved"},
-    {"smoothness", "bad"},
-    {"access", "no"},
-    {"access", "destination"},
-    {"foot", "private"},
-    {"foot", "permissive"},
-    {"foot", "permit"},
-    {"bicycle", "permissive"},
-    {"bicycle", "private"},
-    {"bicycle", "permit"},
-    {"tracktype", "grade2"},
     {"tracktype", "grade3"},
     {"tracktype", "grade4"},
     {"tracktype", "grade5"},
