@@ -1,3 +1,5 @@
+from bad_tags import BAD_TAG_PAIRS
+
 SPECIAL_RESULTS = {"great", "bicycle_undefined", "bikelane", "greatfoot", "foot"}
 
 
@@ -90,58 +92,7 @@ def test_no(tags):
     if no_surface and no_great_tags and tags.get("highway") == "track":
         return True
 
-    filters = [
-        ("highway", "construction"),
-        ("highway", "steps"),
-        ("highway", "proposed"),
-        ("highway", "platform"),
-        ("highway", "bus_stop"),
-        ("highway", "rest_area"),
-        ("highway", "bridleway"),
-        ("highway", "via_ferrata"),
-        ("highway", "planned"),
-        ("highway", "corridor"),
-        ("highway", "raceway"),
-        ("highway", "elevator"),
-        ("highway", "emergency_bay"),
-        ("highway", "services"),
-        ("amenity", "parking"),
-        ("amenity", "services"),
-        ("smoothness", "bad"),
-        ("designation", "public_bridleway"),
-        ("smoothness", "very_bad"),
-        ("smoothness", "very_horrible"),
-        ("smoothness", "horrible"),
-        ("smoothness", "impassable"),
-        ("smoothness", "medium"),
-        ("footway", "crossing"),
-        ("surface", "dirt"),
-        ("surface", "unpaved"),
-        ("surface", "gravel"),
-        ("surface", "grass"),
-        ("surface", "ground"),
-        ("surface", "sand"),
-        ("surface", "earth"),
-        ("surface", "pebblestone"),
-        ("surface", "fine_gravel"),
-        ("surface", "cobblestone"),
-        ("surface", "concrete:plates"),
-        ("surface", "concrete:lanes"),
-        ("surface", "wood"),
-        ("surface", "metal"),
-        ("surface", "stone"),
-        ("surface", "grass_paver"),
-        ("area", "yes"),
-        ("ice_road", "yes"),
-        ("winter_road", "yes"),
-        ("tracktype", "grade2"),
-        ("tracktype", "grade3"),
-        ("tracktype", "grade4"),
-        ("tracktype", "grade5"),
-        ("tracktype", "indeterminate"),
-        ("access", "private"),
-    ]
-    for k, v in filters:
+    for k, v in BAD_TAG_PAIRS:
         if tags.get(k) == v:
             return True
     return False

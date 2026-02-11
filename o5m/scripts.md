@@ -4,13 +4,14 @@
 
 `osmium tags-filter --progress -v -t planet-latest.osm.pbf w/highway -o planet-highways.osm.pbf`
 
-## filter ways + tags + lbroads with osmium (replaces filter_osm + osmfilter + filter.php)
+## filter ways + tags + lbroads with cpp script (26gb to 12gb) ~16m
 
-`python3 o5m/filter_osmium.py --in planet-highways.osm.pbf --out planet-filtered.osm.pbf`
+`./o5m/filter_osmium_cpp --in planet-highways.osm.pbf --out planet-filtered.osm.pbf`
 
-## remove unused nodes. we have resulting file)(5gb to 2gb)
+## remove unused nodes. we have resulting file(12gb to 4gb)
 
-`osmfilter planet-filtered.o5m --keep="highway=" --out-o5m >planet-highways.o5m`
+`osmium tags-filter --progress -v -t /mnt/d/downloads/planet-filtered.osm.pbf w/highway -o /mnt/d/downloads/planet-filtered2.os
+m.pbf`
 
 ## make "black" file
 
