@@ -15,7 +15,7 @@ class MapController extends Controller
         $px = $x;
         $py = $y;
         $parent = "l_{$pzoom}.{$px}.{$py}.packed";
-        while ($pzoom > 6 && !Storage::disk('data_cache')->exists($parent)) {
+        while ($pzoom > 6 && ! Storage::disk('data_cache')->exists($parent)) {
             $pzoom -= 1;
             $px = floor($px / 2);
             $py = floor($py / 2);
@@ -24,12 +24,14 @@ class MapController extends Controller
         if (Storage::disk('data_cache')->size($parent) < 13718638) {
             RenderOverlay::dispatchSync($z, $x, $y);
             $path = Storage::disk('public')->path("lb_overlay/$z/$x/$y.png");
+
             return response()->file($path, [
                 'Content-Type' => 'image/png',
             ]);
         }
 
         RenderOverlay::dispatch($z, $x, $y);
+
         return new Response('', 202);
     }
 
@@ -37,6 +39,7 @@ class MapController extends Controller
     {
         MapRenderer::handle($z, $x, $y);
         $path = Storage::disk('public')->path("lb_map/$z/$x/$y.png");
+
         return response()->file($path, [
             'Content-Type' => 'image/png',
         ]);
