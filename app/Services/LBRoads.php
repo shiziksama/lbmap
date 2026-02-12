@@ -58,7 +58,6 @@ class LBRoads
         $lng_from = -180 + $x * $lng_deg_per_item;
         $lng_to = -180 + ($x + 1) * $lng_deg_per_item;
 
-        $lat_deg_per_item = (85.0511 * 2) / $items_count;
         $lat_to = rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
         $lat_from = rad2deg(atan(sinh(pi() * (1 - 2 * ($y + 1) / $items_count))));
 
@@ -280,7 +279,7 @@ class LBRoads
             }
         }
         //		if(php_sapi_name()=='cli'){var_dump('filtered_lines|time:'.time());}
-        Storage::disk('data_cache')->put($file,$this->lines2file($lines));
+        Storage::disk('data_cache')->put($file, $this->lines2file($lines));
 
         return $lines;
     }

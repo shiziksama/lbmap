@@ -9,7 +9,6 @@ class OverlayRenderer
     public static function lines_filter($pre_lines)
     {
         $lines = ['undefined' => [], 'bikelane' => [], 'foot' => [], 'bicycle_undefined' => [], 'greatfoot' => [], 'great' => []];
-        $points = [];
         foreach ($pre_lines as $pre_line) {
             $tg = ! empty($pre_line['tags']['lbroads']) ? $pre_line['tags']['lbroads'] : 'undefined';
             $lines[$tg][] = $pre_line['points'];
@@ -88,13 +87,12 @@ class OverlayRenderer
         $lng_from = -180 + $x * $lng_deg_per_item;
         $lng_to = -180 + ($x + 1) * $lng_deg_per_item;
 
-        $lat_deg_per_item = (85.0511 * 2) / $items_count;
         $lat_to = rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
         $lat_from = rad2deg(atan(sinh(pi() * (1 - 2 * ($y + 1) / $items_count))));
 
         $lbroads = new LBRoads;
         $lines = $lbroads->get_lines($zoom, $x, $y);
-        $lines_all = self::lines_filter($lines);
+        $lines_all = self::lines_filter($lines); // lines mapping to types
         $map = new Imagick;
         $map->newImage(512, 512, new \ImagickPixel('transparent'));
         $map->setImageFormat('png');
@@ -144,7 +142,7 @@ class OverlayRenderer
         // if(php_sapi_name()=='cli'){var_dump('putfile|time:'.time());}
 
         $file_path = "lb_overlay/$zoom/$x/$y.png";
-        Storage::disk('public')->put($file_path,$imagefile);
+        Storage::disk('public')->put($file_path, $imagefile);
         // if(php_sapi_name()=='cli'){var_dump('completed|time:'.time());}
     }
 }
