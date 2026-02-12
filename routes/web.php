@@ -9,6 +9,5 @@ Route::get('/', function () {
 });
 
 Route::get('/lb_overlay/{z}/{x}/{y}.png', [MapController::class, 'overlay']);
-Route::get('/lb_map/{z}/{x}/{y}.png', [MapController::class, 'map']);
 
 Route::match(['post', 'options'], '/interpreter', [InterpreterController::class, 'handle']);
