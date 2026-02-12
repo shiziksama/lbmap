@@ -151,9 +151,8 @@ class FilterHandler(osm.SimpleHandler):
 
         mw = osm.osm.mutable.Way()
         mw.id = w.id
-        mw.nodes = [osm.osm.mutable.NodeRef(ref=n.ref) for n in w.nodes]
-        for k, v in tags.items():
-            mw.tags[k] = v
+        mw.nodes = [osm.osm.NodeRef(n.location, n.ref) for n in w.nodes]
+        mw.tags = tags
         self.writer.add_way(mw)
         self.ways_out += 1
         self._maybe_log()
