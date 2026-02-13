@@ -4,10 +4,16 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Storage;
 
 class LBRoads
 {
+    private LBPackedLines $packedLines;
+
+    public function __construct(LBPackedLines $packedLines)
+    {
+        $this->packedLines = $packedLines;
+    }
+
     private function runOsmconvert(string $filename, string $params, bool $returnOutput = true)
     {
         $command = 'osmconvert '.$filename.' '.$params;
@@ -144,7 +150,6 @@ class LBRoads
         $lng_from = -180 + $x * $lng_deg_per_item;
         $lng_to = -180 + ($x + 1) * $lng_deg_per_item;
 
-        $lat_deg_per_item = (85.0511 * 2) / $items_count;
         $lat_to = rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
         $lat_from = rad2deg(atan(sinh(pi() * (1 - 2 * ($y + 1) / $items_count))));
         $lines = [];
@@ -163,96 +168,16 @@ class LBRoads
                 }
             }
         }
-        $file = 'l_'.$zoom.'.'.$x.'.'.$y.'.packed';
-        Storage::disk('data_cache')->put($file, $this->lines2file($lines));
+        $this->packedLines->set_lines($zoom, $x, $y, $lines);
 
         return $lines;
-    }
-
-    public function file2lines($content)
-    {
-        $lbroads = $this->getLbroadsMapping();
-        $encoded = gzuncompress($content);
-        $pointlines = array_values(unpack('i*', $encoded));
-        $lines = [];
-        while (! empty($pointlines)) {
-            $lines[] = $this->parseLine($pointlines, $lbroads);
-        }
-
-        return $lines;
-    }
-
-    private function getLbroadsMapping()
-    {
-        return [
-            1 => 'great',
-            2 => 'bicycle_undefined',
-            3 => 'bikelane',
-            4 => 'greatfoot',
-            5 => 'foot',
-            6 => 'undefined',
-        ];
-    }
-
-    private function parseLine(&$pointlines, $lbroads)
-    {
-        $line = [];
-        $line['tags']['lbroads'] = $lbroads[array_shift($pointlines)];
-        $count = round(array_shift($pointlines) / 2);
-        $line['points'] = $this->parsePoints($pointlines, $count);
-
-        return $line;
-    }
-
-    private function parsePoints(&$pointlines, $count)
-    {
-        $points = [];
-        while ($count > 0) {
-            $points[] = [
-                'lat' => array_shift($pointlines) / 10000000,
-                'lng' => array_shift($pointlines) / 10000000,
-            ];
-            $count--;
-        }
-
-        return $points;
-    }
-
-    public function lines2file($lines)
-    {
-        // return json_encode($lines);
-        // $lines=array_slice($lines,0,2);
-        $lbroads = ['great' => 1, 'bicycle_undefined' => 2, 'bikelane' => 3, 'greatfoot' => 4, 'foot' => 5, 'undefined' => 6];
-        $packed = '';
-        foreach ($lines as $line) {
-            $pointline = [];
-            $type = $lbroads[$line['tags']['lbroads'] ?? 'undefined'];
-            foreach ($line['points'] as $point) {
-                $pointline[] = $point['lat'] * 10000000;
-                $pointline[] = $point['lng'] * 10000000;
-                // $pointline[]=(180.1234567*10000000);
-
-            }
-            $pointlines[] = $pointline;
-            $packed .= pack('i*', $type, count($pointline), ...$pointline);
-        }
-        // $coord=(int)(180.1234567*10000000);
-        // var_dump(PHP_INT_MAX);
-        // var_dump(PHP_INT_MIN);
-        // var_dump($coord);
-        $compressed = gzcompress($packed, 9);
-
-        return $compressed;
     }
 
     public function get_lines($zoom, $x, $y)
     {
-        $file = 'l_'.$zoom.'.'.$x.'.'.$y.'.packed';
-        if (Storage::disk('data_cache')->exists($file)) {
-            return $this->file2lines(Storage::disk('data_cache')->get($file));
-        }
-        if ($zoom > 7) {
-            return $this->parse_parent_lines($zoom, $x, $y);
+        $cachedLines = $this->packedLines->get_lines($zoom, $x, $y);
+        if ($cachedLines !== null) {
+            return $cachedLines;
         }
 
         $elements = $this->get_converted($zoom, $x, $y);
@@ -279,7 +204,7 @@ class LBRoads
             }
         }
         //		if(php_sapi_name()=='cli'){var_dump('filtered_lines|time:'.time());}
-        Storage::disk('data_cache')->put($file, $this->lines2file($lines));
+        $this->packedLines->set_lines($zoom, $x, $y, $lines);
 
         return $lines;
     }
