@@ -157,11 +157,11 @@ mymap.getContainer().appendChild(legend);
 	min-width:30px;
 	padding:5px 0;
 	border-radius:2px;
-	border:2px solid rgba(0,0,0,0.2)	
+	border:2px solid rgba(0,0,0,0.2);
 	position:absolute;
 	top:10px;
 	left:10px;
-	z-index:2;
+	z-index:10;
 }
 .legend_row{
 	display:flex;
