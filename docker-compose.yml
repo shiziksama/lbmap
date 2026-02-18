@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+    postgres:
+        image: postgis/postgis:16-3.4
+        container_name: lbmap-postgres
+        restart: unless-stopped
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: lbmap
+            POSTGRES_USER: lbmap
+            POSTGRES_PASSWORD: lbmap
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./tileproduction/sql/initdb:/docker-entrypoint-initdb.d:ro
+            - ./tileproduction/sql:/sql:ro
+
+    martin:
+        image: maplibre/martin
+        container_name: lbmap-martin
+        restart: unless-stopped
+        ports:
+            - "3000:3000"
+        environment:
+            DATABASE_URL: postgres://lbmap:lbmap@postgres:5432/lbmap
+        depends_on:
+            - postgres
+
+    osm2pgsql:
+        image: iboates/osm2pgsql:latest
+        container_name: lbmap-osm2pgsql
+        profiles:
+            - import
+        depends_on:
+            - postgres
+        environment:
+            PGPASSWORD: lbmap
+        volumes:
+            - ./tileproduction/osm2pgsql:/config:ro
+            - ${PBF_PATH}:/data/planet-filtered.pbf:ro
+        command:
+            [
+                "osm2pgsql",
+                "-O",
+                "flex",
+                "-S",
+                "/config/flex.lua",
+                "--create",
+                "--slim",
+                "--cache",
+                "2000",
+                "--number-processes",
+                "1",
+                "-d",
+                "lbmap",
+                "-U",
+                "lbmap",
+                "-H",
+                "postgres",
+                "-P",
+                "5432",
+                "/data/planet-filtered.pbf",
+            ]
+
+volumes:
+    postgres_data:
