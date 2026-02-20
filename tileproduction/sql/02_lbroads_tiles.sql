@@ -1,7 +1,6 @@
 CREATE OR REPLACE VIEW lbroads_tiles AS
 SELECT
-    osm_id,
-    roadtype,
+    lbroads,
     geometry
 FROM osm_lbroads;
 
