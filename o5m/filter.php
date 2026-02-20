@@ -1,6 +1,11 @@
 <?php
 
-include __DIR__.'/../vendor/autoload.php';
+require_once __DIR__.'/../app/Services/WeblamasXMLReader.php';
+require_once __DIR__.'/../app/Services/OsmFilter.php';
+
+use App\Services\WeblamasXMLReader;
+use App\Services\OsmFilter;
+
 $z = new WeblamasXMLReader;
 $z->open('php://stdin');
 echo "<?xml version='1.0' encoding='UTF-8'?>".PHP_EOL;
