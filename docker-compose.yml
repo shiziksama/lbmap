@@ -109,6 +109,43 @@ services:
                 "${PBF_HIGHWAYS:-/data/planet-highways.osm.pbf}",
             ]
 
+    pbf-filter-cpp:
+        build:
+            context: .
+            dockerfile: ./docker/osm-tools/Dockerfile
+        container_name: lbmap-pbf-filter-cpp
+        profiles:
+            - prepare
+        volumes:
+            - ${DATA_DIR:-./data}:/data
+            - ./o5m:/o5m:ro
+        command:
+            [
+                "/usr/local/bin/filter_osmium_cpp",
+                "--in",
+                "${PBF_HIGHWAYS:-/data/planet-highways.osm.pbf}",
+                "--out",
+                "${PBF_CPP_OUT:-/data/planet-filtered-cpp.osm.pbf}",
+            ]
+
+    pbf-filter-py:
+        build:
+            context: .
+            dockerfile: ./docker/osm-tools/Dockerfile
+        container_name: lbmap-pbf-filter-py
+        profiles:
+            - prepare
+        volumes:
+            - ${DATA_DIR:-./data}:/data
+            - ./o5m:/o5m:ro
+        command:
+            [
+                "python3",
+                "/o5m/filter_osmium.py",
+                "--in",
+                "${PBF_CPP_OUT:-/data/planet-filtered-cpp.osm.pbf}",
+                "--out",
+                "${PBF_OUT:-/data/planet-filtered.osm.pbf}",
             ]
 
 volumes:
