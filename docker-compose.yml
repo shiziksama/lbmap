@@ -16,6 +16,17 @@ services:
             - ./tileproduction/sql/initdb:/docker-entrypoint-initdb.d:ro
             - ./tileproduction/sql:/sql:ro
 
+    postgrest:
+        image: postgrest/postgrest:v12.2.3
+        container_name: lbmap-postgrest
+        restart: unless-stopped
+        environment:
+            PGRST_DB_URI: postgres://lbmap:lbmap@postgres:5432/lbmap
+            PGRST_DB_SCHEMA: public
+            PGRST_DB_ANON_ROLE: lbmap
+        depends_on:
+            - postgres
+
     martin:
         image: maplibre/martin
         container_name: lbmap-martin
@@ -26,6 +37,18 @@ services:
             DATABASE_URL: postgres://lbmap:lbmap@postgres:5432/lbmap
         depends_on:
             - postgres
+
+    legacy:
+        image: nginx:alpine
+        container_name: lbmap-legacy
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - ./public/legacy:/usr/share/nginx/html:ro
+            - ./docker/nginx/legacy.conf:/etc/nginx/conf.d/default.conf:ro
+        depends_on:
+            - postgrest
 
     osm2pgsql:
         image: iboates/osm2pgsql:latest

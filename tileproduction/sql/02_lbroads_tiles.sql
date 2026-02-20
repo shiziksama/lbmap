@@ -11,8 +11,8 @@ Drop VIEW IF EXISTS strange_roads;
 CREATE OR REPLACE VIEW strange_roads AS
 SELECT
     osm_id,
-    tags,
-    geometry
+    hstore_to_json(tags) AS tags,
+    ST_AsGeoJSON(geometry)::json AS geometry
 FROM osm_lbroads where lbroads = 'undefined';
 
 
