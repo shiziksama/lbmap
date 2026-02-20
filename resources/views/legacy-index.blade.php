@@ -67,7 +67,12 @@ const mymap = new maplibregl.Map({
 			},
 			lbroads: {
 				type: 'vector',
-				tiles: ['http://localhost:3000/osm_lbroads/{z}/{x}/{y}'],
+				tiles: ['http://localhost:3000/lbroads_tiles/{z}/{x}/{y}'],
+				attribution: '© OpenStreetMap contributors'
+			},
+			strange_roads: {
+				type: 'vector',
+				tiles: ['http://localhost:3000/strange_roads/{z}/{x}/{y}'],
 				attribution: '© OpenStreetMap contributors'
 			}
 		},
@@ -83,7 +88,7 @@ const mymap = new maplibregl.Map({
 				id: 'lb_lines',
 				type: 'line',
 				source: 'lbroads',
-				'source-layer': 'osm_lbroads',
+				'source-layer': 'lbroads_tiles',
 				minzoom: 0,
 				maxzoom: 20,
 				paint: {
@@ -109,6 +114,23 @@ const mymap = new maplibregl.Map({
 				},
 				layout: {
 					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'strange_lines',
+				type: 'line',
+				source: 'strange_roads',
+				'source-layer': 'strange_roads',
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color':'rgb(0,0,0)'
+				},
+				layout: {
+					'line-cap': 'round',
 					'line-join': 'round'
 				}
 			}
@@ -148,8 +170,28 @@ legend.innerHTML =
 	'<div class="legend_row"><i style="background:rgb(255,0,0)"></i> <div class="text">Велодоріжки з невідомим покриттям</div></div>' +
 	'<div class="legend_row"><i style="background:rgb(0,0,255)"></i> <div class="text">Велосмуги</div></div>' +
 	'<div class="legend_row"><i style="background:rgb(19,130,0)"></i> <div class="text">Тротуар або вірогідний проїзд (асфальт)</div></div>' +
-	'<div class="legend_row"><i style="background:rgb(40,252,3)"></i> <div class="text">Тротуар або вірогідний проїзд</div></div>';
+	'<div class="legend_row"><i style="background:rgb(40,252,3)"></i> <div class="text">Тротуар або вірогідний проїзд</div></div>' +
+	'<div class="legend_row"><i style="background:rgb(255,140,0)"></i> <div class="text">Strange roads</div></div>';
 mymap.getContainer().appendChild(legend);
+
+const layersControl = document.createElement('div');
+layersControl.className = 'layers-control';
+layersControl.innerHTML =
+	'<label><input type="checkbox" id="toggle-lbroads" checked> Lbroads</label>' +
+	'<label><input type="checkbox" id="toggle-strange" checked> Strange roads</label>';
+mymap.getContainer().appendChild(layersControl);
+
+function setLayerVisibility(layerId, visible) {
+	mymap.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+}
+
+document.getElementById('toggle-lbroads').addEventListener('change', function (e) {
+	setLayerVisibility('lb_lines', e.target.checked);
+});
+
+document.getElementById('toggle-strange').addEventListener('change', function (e) {
+	setLayerVisibility('strange_lines', e.target.checked);
+});
 
 </script>
 <style>
@@ -190,6 +232,30 @@ mymap.getContainer().appendChild(legend);
 	max-width:250px;
 	margin-left:7px;
 	margin-right: 10px;
+}
+
+.layers-control{
+	background:white;
+	padding:8px 10px;
+	border-radius:2px;
+	border:2px solid rgba(0,0,0,0.2);
+	position:absolute;
+	top:10px;
+	right:10px;
+	z-index:10;
+	display:flex;
+	gap:10px;
+	align-items:center;
+}
+.layers-control label{
+	display:flex;
+	gap:6px;
+	align-items:center;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
+}
+.layers-control input{
+	cursor:pointer;
 }
 </style>
 	     </body>
