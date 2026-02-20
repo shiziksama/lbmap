@@ -25,4 +25,3 @@ class Kernel extends HttpKernel
         'auth' => \App\Http\Middleware\Authenticate::class,
     ];
 }
-

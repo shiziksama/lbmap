@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\LBRoads;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class InterpreterController extends Controller
 {
@@ -29,14 +29,14 @@ class InterpreterController extends Controller
             $bbox = substr($out[0][0], 1, -1);
         }
 
-        if (!$bbox) {
+        if (! $bbox) {
             return response()->json([], 400);
         }
 
         $bbox = explode(',', $bbox);
-        $bbox = $bbox[1] . ',' . $bbox[0] . ',' . $bbox[3] . ',' . $bbox[2];
+        $bbox = $bbox[1].','.$bbox[0].','.$bbox[3].','.$bbox[2];
 
-        $service = new LBRoads();
+        $service = new LBRoads;
         $elements = $service->get_elements('planet-black.o5m', $bbox);
 
         $result = [

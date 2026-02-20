@@ -53,6 +53,12 @@ return [
             'throw' => false,
             'report' => false,
         ],
+        'data_cache_permanent' => [
+            'driver' => 'local',
+            'root' => storage_path('app/data_cache_permanent'),
+            'throw' => false,
+            'report' => false,
+        ],
 
         's3' => [
             'driver' => 's3',

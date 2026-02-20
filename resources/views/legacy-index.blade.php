@@ -1,30 +1,11 @@
-<?php
-
-$zoom = 15;
-$x = 17155;
-$y = 11191;
-
-$items_count = pow(2, $zoom);
-$lng_deg_per_item = 360 / $items_count;
-$lng_from = -180 + $x * $lng_deg_per_item;
-$lng_to = -180 + ($x + 1) * $lng_deg_per_item;
-
-$lat_deg_per_item = (85.0511 * 2) / $items_count;
-$lat_to = rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
-$lat_from = rad2deg(atan(sinh(pi() * (1 - 2 * ($y + 1) / $items_count))));
-
-$bbox = $lng_from.','.$lat_from.','.$lng_to.','.$lat_to;
-// var_dump($bbox);
-// die();
-?>
 <!DOCTYPE html>
 <html>
     <head>
     <title>Карта велодоріжок</title>
 	
 	<meta name="viewport" content="width=device-width" />
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+	<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+	<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
   <style>
   #mapid { 
   position:fixed;
@@ -52,88 +33,223 @@ if(!cz){
 	cz=6;
 }
 
-var mymap = L.map('mapid', {
-    center: [clat, clng],
-    zoom: cz
+const mymap = new maplibregl.Map({
+	container: 'mapid',
+	center: [parseFloat(clng), parseFloat(clat)],
+	zoom: parseFloat(cz),
+	style: {
+		version: 8,
+		sources: {
+			base: {
+				type: 'raster',
+				tiles: ['https://maps.geoapify.com/v1/tile/positron/{z}/{x}/{y}.png?apiKey=500c2912a9584dbfb20018405f772c3d'],
+				tileSize: 256,
+				attribution: 'Powered by <a href="https://www.geoapify.com/" target="_blank">Geoapify</a> | <a href="https://openmaptiles.org/" target="_blank">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a> contributors | <a href="https://lamastravels.in.ua/" target="_blank">Authors</a>'
+			},
+			lbroads: {
+				type: 'vector',
+				tiles: ['http://localhost:3000/lbroads_tiles/{z}/{x}/{y}'],
+				attribution: '© OpenStreetMap contributors'
+			}
+		},
+		layers: [
+			{
+				id: 'base',
+				type: 'raster',
+				source: 'base',
+				minzoom: 0,
+				maxzoom: 20
+			},
+			{
+				id: 'lb_undefined',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'undefined'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(0,0,0)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_bikelane',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'bikelane'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(0,0,255)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_foot',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'foot'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(40,252,3)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_bicycle_undefined',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'bicycle_undefined'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(255,0,0)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_greatfoot',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'greatfoot'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(19,130,0)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_great',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'great'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(125,0,125)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+		]
+	}
 });
 
-
-
-
-L.tileLayer('https://maps.geoapify.com/v1/tile/positron/{z}/{x}/{y}.png?apiKey=500c2912a9584dbfb20018405f772c3d', {
-  attribution: 'Powered by <a href="https://www.geoapify.com/" target="_blank">Geoapify</a> | <a href="https://openmaptiles.org/" target="_blank">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a> contributors | <a href="https://lamastravels.in.ua/" target="_blank">Authors</a>',
-  maxZoom: 20, id: 'osm-bright'
-}).addTo(mymap);
-
-
-const lbmap=L.tileLayer('/lb_overlay/{z}/{x}/{y}.png', {
-	maxZoom: 18,
-    tileSize: 256,
-    zoomOffset: 0,
-	opacity:0.9,
-}).addTo(mymap);
-const layerControl = L.control.layers({},{"Карта велодоріжок":lbmap}).addTo(mymap);
-
-
-
-
-mymap.addEventListener('moveend',function(ev){
-	localStorage.setItem('lat',mymap.getCenter().lat);
-	localStorage.setItem('lng',mymap.getCenter().lng);
-	//console.log(mymap.getCenter());
+mymap.on('moveend', function() {
+	const center = mymap.getCenter();
+	localStorage.setItem('lat', center.lat);
+	localStorage.setItem('lng', center.lng);
 });
 
-mymap.addEventListener('zoomend',function(ev){
-	localStorage.setItem('zoom',mymap.getZoom());
+mymap.on('zoomend', function() {
+	localStorage.setItem('zoom', mymap.getZoom());
 });
-	
-	
-	
-var locationMarker;
 
-function onLocationFound(e) {
-	if(!locationMarker){
-		locationMarker = L.marker(e.latlng).addTo(mymap);
-	}else{
-		locationMarker.setLatLng(e.latlng);
+let locationMarker;
+
+function onLocationFound(position) {
+	const lngLat = [position.coords.longitude, position.coords.latitude];
+	if (!locationMarker) {
+		locationMarker = new maplibregl.Marker().setLngLat(lngLat).addTo(mymap);
+	} else {
+		locationMarker.setLngLat(lngLat);
 	}
 }
 
-mymap.on('locationfound', onLocationFound);
-mymap.locate({watch: true});
-
-
- var legend = L.control({position: 'topleft'});
-legend.onAdd=function(map){
-	var div=L.DomUtil.create('div','legend');
-	/*
-	'great'=>'125,0,125','bicycle_undefined'=>'255,0,0','bikelane'=>'0,0,255','undefined'=>'0,0,0','foot'=>'40,252,3','greatfoot'=>'19,130,0'
-	*/
-	div.innerHTML=
-		'<div class="legend_row"><i style="background:rgb(125,0,125)"></i> <div class="text">Велодоріжки з якісним покриттям</div></div>'+
-		'<div class="legend_row"><i style="background:rgb(255,0,0)"></i> <div class="text">Велодоріжки з невідомим покриттям</div></div>'+
-		'<div class="legend_row"><i style="background:rgb(0,0,255)"></i> <div class="text">Велосмуги</div></div>'+
-		'<div class="legend_row"><i style="background:rgb(19,130,0)"></i> <div class="text">Тротуар або вірогідний проїзд (асфальт)</div></div>'+
-		'<div class="legend_row"><i style="background:rgb(40,252,3)"></i> <div class="text">Тротуар або вірогідний проїзд</div></div>'		
-	;
-	return div;
+if (navigator.geolocation) {
+	navigator.geolocation.watchPosition(onLocationFound);
 }
-legend.addTo(mymap);
+
+const controls = document.createElement('div');
+controls.className = 'map-controls';
+controls.innerHTML =
+	'<div class="legend">' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_great" checked><i style="background:rgb(125,0,125)"></i> <div class="text">Велодоріжки з якісним покриттям</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_bicycle_undefined" checked><i style="background:rgb(255,0,0)"></i> <div class="text">Велодоріжки з невідомим покриттям</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_bikelane" checked><i style="background:rgb(0,0,255)"></i> <div class="text">Велосмуги</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_greatfoot" checked><i style="background:rgb(19,130,0)"></i> <div class="text">Тротуар або вірогідний проїзд (асфальт)</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_foot" checked><i style="background:rgb(40,252,3)"></i> <div class="text">Тротуар або вірогідний проїзд</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_undefined" checked><i style="background:rgb(0,0,0)"></i> <div class="text">Невідомі</div></label>' +
+	'</div>';
+mymap.getContainer().appendChild(controls);
+
+function setLayerVisibility(layerId, visible) {
+	mymap.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+}
+
+controls.querySelectorAll('input[type="checkbox"][data-layer]').forEach(function (checkbox) {
+	checkbox.addEventListener('change', function (e) {
+		const layerId = e.target.getAttribute('data-layer');
+		setLayerVisibility(layerId, e.target.checked);
+	});
+});
 
 </script>
 <style>
-.legend{
+.map-controls{
 	background:white;
-	min-width:30px;
-	padding:5px 0;
+	padding:8px 10px;
 	border-radius:2px;
-	border:2px solid rgba(0,0,0,0.2)	
-	
+	border:2px solid rgba(0,0,0,0.2);
+	position:absolute;
+	top:10px;
+	right:10px;
+	z-index:10;
+	display:flex;
+	gap:12px;
+	align-items:flex-start;
+}
+.legend{
+	min-width:30px;
+	display:flex;
+	flex-direction:column;
+	gap:4px;
 }
 .legend_row{
 	display:flex;
     align-items: center;
     padding-left: 8px;
+	gap:6px;
+	cursor:pointer;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
 }
 .legend .text{
 	max-width:0px;
@@ -156,6 +272,10 @@ legend.addTo(mymap);
 	max-width:250px;
 	margin-left:7px;
 	margin-right: 10px;
+}
+
+.legend input{
+	cursor:pointer;
 }
 </style>
 	     </body>
