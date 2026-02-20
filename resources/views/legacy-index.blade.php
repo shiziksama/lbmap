@@ -1,22 +1,3 @@
-<?php
-
-$zoom = 15;
-$x = 17155;
-$y = 11191;
-
-$items_count = pow(2, $zoom);
-$lng_deg_per_item = 360 / $items_count;
-$lng_from = -180 + $x * $lng_deg_per_item;
-$lng_to = -180 + ($x + 1) * $lng_deg_per_item;
-
-$lat_deg_per_item = (85.0511 * 2) / $items_count;
-$lat_to = rad2deg(atan(sinh(pi() * (1 - 2 * $y / $items_count))));
-$lat_from = rad2deg(atan(sinh(pi() * (1 - 2 * ($y + 1) / $items_count))));
-
-$bbox = $lng_from.','.$lat_from.','.$lng_to.','.$lat_to;
-// var_dump($bbox);
-// die();
-?>
 <!DOCTYPE html>
 <html>
     <head>
@@ -69,11 +50,6 @@ const mymap = new maplibregl.Map({
 				type: 'vector',
 				tiles: ['http://localhost:3000/lbroads_tiles/{z}/{x}/{y}'],
 				attribution: '© OpenStreetMap contributors'
-			},
-			strange_roads: {
-				type: 'vector',
-				tiles: ['http://localhost:3000/strange_roads/{z}/{x}/{y}'],
-				attribution: '© OpenStreetMap contributors'
 			}
 		},
 		layers: [
@@ -85,32 +61,17 @@ const mymap = new maplibregl.Map({
 				maxzoom: 20
 			},
 			{
-				id: 'lb_lines',
+				id: 'lb_undefined',
 				type: 'line',
 				source: 'lbroads',
 				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'undefined'],
 				minzoom: 0,
 				maxzoom: 20,
 				paint: {
 					'line-opacity': 0.9,
 					'line-width': 8,
-					'line-color': [
-						'match',
-						['get', 'lbroads'],
-						'great',
-						'rgb(125,0,125)',
-						'bicycle_undefined',
-						'rgb(255,0,0)',
-						'bikelane',
-						'rgb(0,0,255)',
-						'greatfoot',
-						'rgb(19,130,0)',
-						'foot',
-						'rgb(40,252,3)',
-						'undefined',
-						'rgb(0,0,0)',
-						'rgb(0,0,0)'
-					]
+					'line-color': 'rgb(0,0,0)'
 				},
 				layout: {
 					'line-cap': 'butt',
@@ -118,22 +79,95 @@ const mymap = new maplibregl.Map({
 				}
 			},
 			{
-				id: 'strange_lines',
+				id: 'lb_bikelane',
 				type: 'line',
-				source: 'strange_roads',
-				'source-layer': 'strange_roads',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'bikelane'],
 				minzoom: 0,
 				maxzoom: 20,
 				paint: {
 					'line-opacity': 0.9,
 					'line-width': 8,
-					'line-color':'rgb(0,0,0)'
+					'line-color': 'rgb(0,0,255)'
 				},
 				layout: {
-					'line-cap': 'round',
+					'line-cap': 'butt',
 					'line-join': 'round'
 				}
-			}
+			},
+			{
+				id: 'lb_foot',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'foot'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(40,252,3)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_bicycle_undefined',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'bicycle_undefined'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(255,0,0)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_greatfoot',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'greatfoot'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(19,130,0)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
+			{
+				id: 'lb_great',
+				type: 'line',
+				source: 'lbroads',
+				'source-layer': 'lbroads_tiles',
+				filter: ['==', ['get', 'lbroads'], 'great'],
+				minzoom: 0,
+				maxzoom: 20,
+				paint: {
+					'line-opacity': 0.9,
+					'line-width': 8,
+					'line-color': 'rgb(125,0,125)'
+				},
+				layout: {
+					'line-cap': 'butt',
+					'line-join': 'round'
+				}
+			},
 		]
 	}
 });
@@ -163,53 +197,59 @@ if (navigator.geolocation) {
 	navigator.geolocation.watchPosition(onLocationFound);
 }
 
-const legend = document.createElement('div');
-legend.className = 'legend';
-legend.innerHTML =
-	'<div class="legend_row"><i style="background:rgb(125,0,125)"></i> <div class="text">Велодоріжки з якісним покриттям</div></div>' +
-	'<div class="legend_row"><i style="background:rgb(255,0,0)"></i> <div class="text">Велодоріжки з невідомим покриттям</div></div>' +
-	'<div class="legend_row"><i style="background:rgb(0,0,255)"></i> <div class="text">Велосмуги</div></div>' +
-	'<div class="legend_row"><i style="background:rgb(19,130,0)"></i> <div class="text">Тротуар або вірогідний проїзд (асфальт)</div></div>' +
-	'<div class="legend_row"><i style="background:rgb(40,252,3)"></i> <div class="text">Тротуар або вірогідний проїзд</div></div>' +
-	'<div class="legend_row"><i style="background:rgb(255,140,0)"></i> <div class="text">Strange roads</div></div>';
-mymap.getContainer().appendChild(legend);
-
-const layersControl = document.createElement('div');
-layersControl.className = 'layers-control';
-layersControl.innerHTML =
-	'<label><input type="checkbox" id="toggle-lbroads" checked> Lbroads</label>' +
-	'<label><input type="checkbox" id="toggle-strange" checked> Strange roads</label>';
-mymap.getContainer().appendChild(layersControl);
+const controls = document.createElement('div');
+controls.className = 'map-controls';
+controls.innerHTML =
+	'<div class="legend">' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_great" checked><i style="background:rgb(125,0,125)"></i> <div class="text">Велодоріжки з якісним покриттям</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_bicycle_undefined" checked><i style="background:rgb(255,0,0)"></i> <div class="text">Велодоріжки з невідомим покриттям</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_bikelane" checked><i style="background:rgb(0,0,255)"></i> <div class="text">Велосмуги</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_greatfoot" checked><i style="background:rgb(19,130,0)"></i> <div class="text">Тротуар або вірогідний проїзд (асфальт)</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_foot" checked><i style="background:rgb(40,252,3)"></i> <div class="text">Тротуар або вірогідний проїзд</div></label>' +
+		'<label class="legend_row"><input type="checkbox" data-layer="lb_undefined" checked><i style="background:rgb(0,0,0)"></i> <div class="text">Невідомі</div></label>' +
+	'</div>';
+mymap.getContainer().appendChild(controls);
 
 function setLayerVisibility(layerId, visible) {
 	mymap.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
 }
 
-document.getElementById('toggle-lbroads').addEventListener('change', function (e) {
-	setLayerVisibility('lb_lines', e.target.checked);
-});
-
-document.getElementById('toggle-strange').addEventListener('change', function (e) {
-	setLayerVisibility('strange_lines', e.target.checked);
+controls.querySelectorAll('input[type="checkbox"][data-layer]').forEach(function (checkbox) {
+	checkbox.addEventListener('change', function (e) {
+		const layerId = e.target.getAttribute('data-layer');
+		setLayerVisibility(layerId, e.target.checked);
+	});
 });
 
 </script>
 <style>
-.legend{
+.map-controls{
 	background:white;
-	min-width:30px;
-	padding:5px 0;
+	padding:8px 10px;
 	border-radius:2px;
 	border:2px solid rgba(0,0,0,0.2);
 	position:absolute;
 	top:10px;
-	left:10px;
+	right:10px;
 	z-index:10;
+	display:flex;
+	gap:12px;
+	align-items:flex-start;
+}
+.legend{
+	min-width:30px;
+	display:flex;
+	flex-direction:column;
+	gap:4px;
 }
 .legend_row{
 	display:flex;
     align-items: center;
     padding-left: 8px;
+	gap:6px;
+	cursor:pointer;
+	font-family: Arial, sans-serif;
+	font-size: 13px;
 }
 .legend .text{
 	max-width:0px;
@@ -234,27 +274,7 @@ document.getElementById('toggle-strange').addEventListener('change', function (e
 	margin-right: 10px;
 }
 
-.layers-control{
-	background:white;
-	padding:8px 10px;
-	border-radius:2px;
-	border:2px solid rgba(0,0,0,0.2);
-	position:absolute;
-	top:10px;
-	right:10px;
-	z-index:10;
-	display:flex;
-	gap:10px;
-	align-items:center;
-}
-.layers-control label{
-	display:flex;
-	gap:6px;
-	align-items:center;
-	font-family: Arial, sans-serif;
-	font-size: 13px;
-}
-.layers-control input{
+.legend input{
 	cursor:pointer;
 }
 </style>

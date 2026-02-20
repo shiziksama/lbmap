@@ -4,7 +4,7 @@ SELECT
     osm_id,
     lbroads,
     geometry
-FROM osm_lbroads WHERE lbroads != 'undefined';
+FROM osm_lbroads;
 
 Drop VIEW IF EXISTS strange_roads;
 
