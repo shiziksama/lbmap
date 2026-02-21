@@ -1,35 +1,81 @@
-This repository now contains a basic Laravel skeleton. Existing helper
-classes have been moved under `app/Services` so they can be autoloaded
-via PSR-4. Legacy PHP scripts have been converted to Artisan commands
-and controllers so the project follows typical Laravel conventions.
+# LBMap
 
-OSM vector tiles pipeline (PostGIS + osm2pgsql + Martin) is also included
-under `tileproduction`. It imports `highway=lbroad` lines into PostGIS
-with full tags (hstore), creates a light-weight tiles view, and serves
-MVT tiles through Martin.
+Цей репозиторій містить:
 
-The Laravel router now serves the original HTML page at `/`. Tile
-requests for overlays and rendered maps are handled by `MapController`:
-`/lb_overlay/{z}/{x}/{y}.png` and `/lb_map/{z}/{x}/{y}.png`.
+- пайплайн генерації OSM тайлів (PostGIS + osmium + власні фільтри + osm2pgsql + Martin) у `tileproduction`
+- легасі-сторінку, яку сервить Nginx
 
-To get started you will need to install dependencies using Composer and
-configure your environment variables based on `.env.example`.
+Нижче — інструкція «з нуля» з акцентом на запуск усіх команд з Docker.
 
-OSM pipeline quickstart:
+## Передумови
 
-1. Set the PBF path for your machine:
-   `export PBF_PATH=/mnt/d/downloads/planet-filtered.pbf`
-2. Start PostGIS and Martin:
-   `docker compose up -d postgres martin`
-3. Run import (one-off, can take hours for large files):
-   `docker compose --profile import run --rm osm2pgsql`
-4. Create the tiles view and indexes:
-   `docker compose exec -T postgres psql -U lbmap -d lbmap -f /sql/02_lbroads_tiles.sql`
-5. Fetch tiles:
-   `http://localhost:3000/tiles/lbroads_tiles/{z}/{x}/{y}.pbf`
+- Встановлений Docker і Docker Compose.
+- Достатньо місця на диску (planet файл дуже великий).
 
-Notes:
+## 0) Налаштування `.env`
 
-- Mapping: `tileproduction/osm2pgsql/flex.lua`
+Docker Compose автоматично читає `.env` поруч із `docker-compose.yml`.
+
+1. Скопіюйте `.env.example` у `.env`.
+2. Вкажіть папку, яку потрібно змонтувати з файлами PBF:
+
+```
+DATA_DIR=./data
+```
+
+Можна вказати абсолютний шлях, наприклад `DATA_DIR=/mnt/d/downloads`.
+
+## 1) Підготувати папку з PBF
+
+Покладіть `planet-latest.osm.pbf` у папку, яку ви вказали в `DATA_DIR`.
+
+Приклад:
+
+```
+./data/planet-latest.osm.pbf
+```
+
+Усі проміжні та фінальні файли будуть створені у цій же папці.
+
+## 2) Один контейнер, весь пайплайн
+
+Якщо хочете все однією командою:
+
+```bash
+docker compose --profile prepare run --rm pbf-pipeline
+```
+
+### Продовжити після падіння
+
+Скрипт орієнтується на останній вже існуючий файл пайплайну і починає з того кроку, того можна видалити всі попередні файли. Воно продовжить з попереднього кроку
+
+## 3) Імпорт у PostGIS і запуск сервісів
+
+### 3.1 Підняти базу та тайл-сервер
+
+```bash
+docker compose up -d postgres martin
+```
+
+### 3.2 Імпорт `planet-filtered.osm.pbf`
+
+```bash
+docker compose --profile import run --rm osm2pgsql
+```
+
+### 3.3 Створити view для тайлів
+
+```bash
+docker compose exec -T postgres psql -U lbmap -d lbmap -f /sql/02_lbroads_tiles.sql
+```
+
+## 4) Де дивитись результат
+
+- Тайли Martin: `http://localhost:3000/tiles/lbroads_tiles/{z}/{x}/{y}.pbf`
+- Легасі сторінка: `http://localhost/`
+
+## Довідка
+
+- Маппінг osm2pgsql: `tileproduction/osm2pgsql/flex.lua`
 - SQL view/index: `tileproduction/sql/02_lbroads_tiles.sql`
-- Full tags are stored in `osm_lbroads.tags`
+- Усі теги зберігаються в `osm_lbroads.tags`

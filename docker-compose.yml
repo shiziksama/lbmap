@@ -61,7 +61,7 @@ services:
             PGPASSWORD: lbmap
         volumes:
             - ./tileproduction/osm2pgsql:/config:ro
-            - ${PBF_PATH}:/data/planet-filtered.pbf:ro
+            - ${DATA_DIR:-./data}:/data:ro
         command:
             [
                 "osm2pgsql",
@@ -83,7 +83,22 @@ services:
                 "postgres",
                 "-P",
                 "5432",
-                "/data/planet-filtered.pbf",
+                "${PBF_OUT:-/data/planet-filtered.osm.pbf}",
+            ]
+
+    pbf-pipeline:
+        build:
+            context: .
+            dockerfile: ./docker/osm-tools/Dockerfile
+        container_name: lbmap-pbf-pipeline
+        profiles:
+            - prepare
+        volumes:
+            - ${DATA_DIR:-./data}:/data
+            - ./o5m:/o5m:ro
+        command:
+            [
+                "/usr/local/bin/pbf_pipeline.sh",
             ]
 
 volumes:
