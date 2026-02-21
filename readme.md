@@ -2,8 +2,7 @@
 
 Цей репозиторій містить:
 
-- пайплайн генерації OSM тайлів (PostGIS + osmium + власні фільтри + osm2pgsql + Martin) у `tileproduction`
-- легасі-сторінку, яку сервить Nginx
+- пайплайн генерації OSM тайлів для велодоріжок (PostGIS + osmium + власні фільтри + osm2pgsql + Martin)
 
 Нижче — інструкція «з нуля» з акцентом на запуск усіх команд з Docker.
 
@@ -23,7 +22,7 @@ Docker Compose автоматично читає `.env` поруч із `docker-
 DATA_DIR=./data
 ```
 
-Можна вказати абсолютний шлях, наприклад `DATA_DIR=/mnt/d/downloads`.
+Можна вказати абсолютний шлях, наприклад `DATA_DIR=/mnt/d/osm`.
 
 ## 1) Підготувати папку з PBF
 
@@ -37,15 +36,16 @@ DATA_DIR=./data
 
 Усі проміжні та фінальні файли будуть створені у цій же папці.
 
-## 2) Один контейнер, весь пайплайн
+## 2) Пайплайн фільтрації та підготовки даних
 
-Якщо хочете все однією командою:
+Ми вибираємо спочатку всі дороги, потім фільтруємо і тегаємо їх для подальшого імпорту в PostGIS та генерації тайлів.
+Команда для запуску всього пайплайну:
 
 ```bash
 docker compose --profile prepare run --rm pbf-pipeline
 ```
 
-### Продовжити після падіння
+### Продовження після падіння
 
 Скрипт орієнтується на останній вже існуючий файл пайплайну і починає з того кроку, того можна видалити всі попередні файли. Воно продовжить з попереднього кроку
 
@@ -54,7 +54,7 @@ docker compose --profile prepare run --rm pbf-pipeline
 ### 3.1 Підняти базу та тайл-сервер
 
 ```bash
-docker compose up -d postgres martin
+docker compose up -d
 ```
 
 ### 3.2 Імпорт `planet-filtered.osm.pbf`
@@ -71,11 +71,10 @@ docker compose exec -T postgres psql -U lbmap -d lbmap -f /sql/02_lbroads_tiles.
 
 ## 4) Де дивитись результат
 
-- Тайли Martin: `http://localhost:3000/tiles/lbroads_tiles/{z}/{x}/{y}.pbf`
-- Легасі сторінка: `http://localhost/`
+- Сторінка: `http://localhost/`
+- debug-сторінка, де можна дізнатись, чого саме ця дорога позначена як невідома: `http://localhost/debug`
 
 ## Довідка
 
 - Маппінг osm2pgsql: `tileproduction/osm2pgsql/flex.lua`
 - SQL view/index: `tileproduction/sql/02_lbroads_tiles.sql`
-- Усі теги зберігаються в `osm_lbroads.tags`
