@@ -1,80 +1,80 @@
 # LBMap
 
-Цей репозиторій містить:
+This repository contains:
 
-- пайплайн генерації OSM тайлів для велодоріжок (PostGIS + osmium + власні фільтри + osm2pgsql + Martin)
+- a pipeline for generating OSM tiles for bike lanes (PostGIS + osmium + custom filters + osm2pgsql + Martin)
 
-Нижче — інструкція «з нуля» з акцентом на запуск усіх команд з Docker.
+Below is a “from scratch” guide focused on running all commands with Docker.
 
-## Передумови
+## Prerequisites
 
-- Встановлений Docker і Docker Compose.
-- Достатньо місця на диску (planet файл дуже великий).
+- Docker and Docker Compose installed.
+- Enough disk space (the planet file is very large).
 
-## 0) Налаштування `.env`
+## 0) Configure `.env`
 
-Docker Compose автоматично читає `.env` поруч із `docker-compose.yml`.
+Docker Compose automatically reads `.env` next to `docker-compose.yml`.
 
-1. Скопіюйте `.env.example` у `.env`.
-2. Вкажіть папку, яку потрібно змонтувати з файлами PBF:
+1. Copy `.env.example` to `.env`.
+2. Set the folder to mount with the PBF files:
 
 ```
 DATA_DIR=./data
 ```
 
-Можна вказати абсолютний шлях, наприклад `DATA_DIR=/mnt/d/osm`.
+You can use an absolute path, e.g. `DATA_DIR=/mnt/d/osm`.
 
-## 1) Підготувати папку з PBF
+## 1) Prepare the PBF folder
 
-Покладіть `planet-latest.osm.pbf` у папку, яку ви вказали в `DATA_DIR`.
+Put `planet-latest.osm.pbf` into the folder you specified in `DATA_DIR`.
 
-Приклад:
+Example:
 
 ```
 ./data/planet-latest.osm.pbf
 ```
 
-Усі проміжні та фінальні файли будуть створені у цій же папці.
+All intermediate and final files will be created in the same folder.
 
-## 2) Пайплайн фільтрації та підготовки даних
+## 2) Filtering and data preparation pipeline
 
-Ми вибираємо спочатку всі дороги, потім фільтруємо і тегаємо їх для подальшого імпорту в PostGIS та генерації тайлів.
-Команда для запуску всього пайплайну:
+We first select all roads, then filter and tag them for later import into PostGIS and tile generation.
+Command to run the entire pipeline:
 
 ```bash
 docker compose --profile prepare run --rm pbf-pipeline
 ```
 
-### Продовження після падіння
+### Continue after a failure
 
-Скрипт орієнтується на останній вже існуючий файл пайплайну і починає з того кроку, того можна видалити всі попередні файли. Воно продовжить з попереднього кроку
+The script looks at the last existing pipeline file and starts from that step, so you can delete all previous files. It will continue from the previous step.
 
-## 3) Імпорт у PostGIS і запуск сервісів
+## 3) Import into PostGIS and start services
 
-### 3.1 Підняти базу та тайл-сервер
+### 3.1 Bring up the database and tile server
 
 ```bash
 docker compose up -d
 ```
 
-### 3.2 Імпорт `planet-filtered.osm.pbf`
+### 3.2 Import `planet-filtered.osm.pbf`
 
 ```bash
 docker compose --profile import run --rm osm2pgsql
 ```
 
-### 3.3 Створити view для тайлів
+### 3.3 Create the tiles view
 
 ```bash
 docker compose exec -T postgres psql -U lbmap -d lbmap -f /sql/02_lbroads_tiles.sql
 ```
 
-## 4) Де дивитись результат
+## 4) Where to see the result
 
-- Сторінка: `http://localhost/`
-- debug-сторінка, де можна дізнатись, чого саме ця дорога позначена як невідома: `http://localhost/debug`
+- Page: `http://localhost/`
+- Debug page, where you can see why a road is marked as unknown: `http://localhost/debug`
 
-## Довідка
+## Reference
 
-- Маппінг osm2pgsql: `tileproduction/osm2pgsql/flex.lua`
+- osm2pgsql mapping: `tileproduction/osm2pgsql/flex.lua`
 - SQL view/index: `tileproduction/sql/02_lbroads_tiles.sql`
