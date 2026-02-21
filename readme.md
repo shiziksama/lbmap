@@ -37,33 +37,17 @@ DATA_DIR=./data
 
 Усі проміжні та фінальні файли будуть створені у цій же папці.
 
-## 2) Згенерувати `planet-filtered.osm.pbf` вручну (крок за кроком)
+## 2) Один контейнер, весь пайплайн
 
-Команди потрібно запускати послідовно, одна за одною:
-
-### 2.1 Витягнути тільки `highway=*`
+Якщо хочете все однією командою:
 
 ```bash
-docker compose --profile prepare run --rm pbf-highways
+docker compose --profile prepare run --rm pbf-pipeline
 ```
 
-Результат: `planet-highways.osm.pbf`
+### Продовжити після падіння
 
-### 2.2 Фільтрація C++ (filter_osmium_cpp)
-
-```bash
-docker compose --profile prepare run --rm pbf-filter-cpp
-```
-
-Результат: `planet-filtered-cpp.osm.pbf`
-
-### 2.3 Фільтрація Python (filter_osmium.py)
-
-```bash
-docker compose --profile prepare run --rm pbf-filter-py
-```
-
-Результат: `planet-filtered.osm.pbf`
+Скрипт орієнтується на останній вже існуючий файл пайплайну і починає з того кроку, того можна видалити всі попередні файли. Воно продовжить з попереднього кроку
 
 ## 3) Імпорт у PostGIS і запуск сервісів
 

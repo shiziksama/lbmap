@@ -29,5 +29,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /out/filter_osmium_cpp /usr/local/bin/filter_osmium_cpp
+COPY o5m/pbf_pipeline.sh /usr/local/bin/pbf_pipeline.sh
+
+RUN chmod +x /usr/local/bin/pbf_pipeline.sh
 
 WORKDIR /data

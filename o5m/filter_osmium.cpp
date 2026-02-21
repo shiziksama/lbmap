@@ -88,7 +88,7 @@ BadTags load_bad_tags(const std::string& path) {
 }
 
 const BadTags& bad_tags() {
-    static const BadTags data = load_bad_tags("o5m/bad_tags.json");
+    static const BadTags data = load_bad_tags("/o5m/bad_tags.json");
     return data;
 }
 

@@ -86,11 +86,11 @@ services:
                 "${PBF_OUT:-/data/planet-filtered.osm.pbf}",
             ]
 
-    pbf-highways:
+    pbf-pipeline:
         build:
             context: .
             dockerfile: ./docker/osm-tools/Dockerfile
-        container_name: lbmap-pbf-highways
+        container_name: lbmap-pbf-pipeline
         profiles:
             - prepare
         volumes:
@@ -98,54 +98,7 @@ services:
             - ./o5m:/o5m:ro
         command:
             [
-                "osmium",
-                "tags-filter",
-                "--progress",
-                "-v",
-                "-t",
-                "${PBF_IN:-/data/planet-latest.osm.pbf}",
-                "w/highway",
-                "-o",
-                "${PBF_HIGHWAYS:-/data/planet-highways.osm.pbf}",
-            ]
-
-    pbf-filter-cpp:
-        build:
-            context: .
-            dockerfile: ./docker/osm-tools/Dockerfile
-        container_name: lbmap-pbf-filter-cpp
-        profiles:
-            - prepare
-        volumes:
-            - ${DATA_DIR:-./data}:/data
-            - ./o5m:/o5m:ro
-        command:
-            [
-                "/usr/local/bin/filter_osmium_cpp",
-                "--in",
-                "${PBF_HIGHWAYS:-/data/planet-highways.osm.pbf}",
-                "--out",
-                "${PBF_CPP_OUT:-/data/planet-filtered-cpp.osm.pbf}",
-            ]
-
-    pbf-filter-py:
-        build:
-            context: .
-            dockerfile: ./docker/osm-tools/Dockerfile
-        container_name: lbmap-pbf-filter-py
-        profiles:
-            - prepare
-        volumes:
-            - ${DATA_DIR:-./data}:/data
-            - ./o5m:/o5m:ro
-        command:
-            [
-                "python3",
-                "/o5m/filter_osmium.py",
-                "--in",
-                "${PBF_CPP_OUT:-/data/planet-filtered-cpp.osm.pbf}",
-                "--out",
-                "${PBF_OUT:-/data/planet-filtered.osm.pbf}",
+                "/usr/local/bin/pbf_pipeline.sh",
             ]
 
 volumes:
